@@ -3,56 +3,98 @@ import SwiftUI
 /// Today: one number that answers "am I OK?", the month drawn under it,
 /// then where the money went, what's coming, and what just happened.
 struct TodayView: View {
+    @Environment(AppSession.self) private var session
     @Environment(MonthModel.self) private var month
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 TodayHeader()
-                if month.hasData {
-                    HeroSection()
-                        .padding(.horizontal, 20)
-                        .padding(.top, 26)
-                    PaceChart()
-                        .padding(.horizontal, 16)
-                        .padding(.top, 22)
-                    switch month.status {
-                    case .ahead:
-                        AheadCard().padding(.horizontal, 16).padding(.top, 24)
-                    case .over:
-                        OverOptions().padding(.horizontal, 16).padding(.top, 24)
-                    case .onPace:
-                        EmptyView()
-                    }
-                    WhereItWent().padding(.top, 30)
-                    ComingUp().padding(.top, 30)
-                    RecentList()
-                        .padding(.horizontal, 20)
-                        .padding(.top, 24)
-                } else {
-                    FirstDay()
-                }
+                content
             }
             .padding(.bottom, 120)
-            .animation(.snappy(duration: 0.35), value: month.scenario)
+            .animation(.snappy(duration: 0.35), value: month.status)
         }
         .scrollIndicators(.hidden)
+        .refreshable { await session.refresh() }
         .background(Palette.ground)
         .sensoryFeedback(.success, trigger: month.addCount)
-        .sensoryFeedback(.impact(weight: .light), trigger: month.scenario)
+        .alert("Artha", isPresented: noticeShown) {
+            Button("OK") { session.notice = nil }
+        } message: {
+            Text(session.notice ?? "")
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if month.summary == nil {
+            if let error = session.refreshError {
+                ContentUnavailableView {
+                    Label("Can't load Today", systemImage: "wifi.exclamationmark")
+                } description: {
+                    Text(error)
+                } actions: {
+                    Button("Try again") { Task { await session.refresh() } }
+                }
+                .padding(.top, 80)
+            } else {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 160)
+            }
+        } else if month.isEmpty {
+            FirstDay()
+        } else {
+            if let error = session.refreshError {
+                Label(error, systemImage: "wifi.exclamationmark")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Palette.caution)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+            }
+            HeroSection()
+                .padding(.horizontal, 20)
+                .padding(.top, 26)
+            PaceChart()
+                .padding(.horizontal, 16)
+                .padding(.top, 22)
+            if !month.hasBudget {
+                NoBudgetCard().padding(.horizontal, 16).padding(.top, 24)
+            } else if month.status == .ahead {
+                AheadCard().padding(.horizontal, 16).padding(.top, 24)
+            } else if month.status == .over {
+                OverCard().padding(.horizontal, 16).padding(.top, 24)
+            }
+            if !month.shares.isEmpty {
+                WhereItWent().padding(.top, 30)
+            }
+            if !month.bills.isEmpty {
+                ComingUp().padding(.top, 30)
+            }
+            if !month.recent.isEmpty {
+                RecentList()
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
+            }
+        }
+    }
+
+    private var noticeShown: Binding<Bool> {
+        Binding(get: { session.notice != nil }, set: { if !$0 { session.notice = nil } })
     }
 }
 
 private struct TodayHeader: View {
+    @Environment(AppSession.self) private var session
     @Environment(MonthModel.self) private var month
 
     var body: some View {
-        @Bindable var month = month
         HStack {
             HStack(spacing: 10) {
                 OrbMark().frame(width: 30, height: 30)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("MONDAY, OCT 19")
+                    Text(month.headerDate)
                         .font(.system(size: 12, weight: .semibold))
                         .tracking(0.5)
                         .foregroundStyle(Palette.secondary)
@@ -62,30 +104,22 @@ private struct TodayHeader: View {
                 }
             }
             Spacer()
-            HStack(spacing: 8) {
-                Button {} label: {
-                    Image(systemName: "sparkle")
-                        .font(.system(size: 17, weight: .medium))
-                        .frame(width: 44, height: 44)
-                        .background(Palette.surface, in: Circle())
-                        .foregroundStyle(Palette.ink)
-                }
-                .accessibilityLabel("Ask Artha")
-                Menu {
-                    Picker("Prototype: month", selection: $month.scenario) {
-                        ForEach(MonthModel.Scenario.allCases) { scenario in
-                            Text(scenario.rawValue).tag(scenario)
+            Menu {
+                if let user = session.user {
+                    Section("Signed in as \(user.username)") {
+                        Button("Sign out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
+                            Task { await session.signOut() }
                         }
                     }
-                } label: {
-                    Text("SK")
-                        .font(.system(size: 14, weight: .semibold))
-                        .frame(width: 44, height: 44)
-                        .background(Palette.raised, in: Circle())
-                        .foregroundStyle(Palette.ink)
                 }
-                .accessibilityLabel("Profile and settings")
+            } label: {
+                Text(session.user?.initials ?? "")
+                    .font(.system(size: 14, weight: .semibold))
+                    .frame(width: 44, height: 44)
+                    .background(Palette.raised, in: Circle())
+                    .foregroundStyle(Palette.ink)
             }
+            .accessibilityLabel("Account")
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
@@ -116,8 +150,4 @@ struct CapsuleButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.snappy(duration: 0.2), value: configuration.isPressed)
     }
-}
-
-#Preview {
-    TodayView().environment(MonthModel())
 }

@@ -58,23 +58,44 @@ extension Font {
     }
 }
 
+/// Money as Artha shows it: the currency's own symbol (the same six the web
+/// app supports, with the same symbols as utils.CURRENCY_SYMBOLS) and
+/// grouped digits. Totals use the person's display currency; a single
+/// transaction always uses its own.
 enum Money {
     private static let locale = Locale(identifier: "en_US")
+    private static let symbols = ["USD": "$", "GBP": "£", "EUR": "€", "BDT": "৳", "CAD": "$", "AUD": "$"]
 
-    static func whole(_ value: Decimal) -> String {
-        value.formatted(.currency(code: "USD").locale(locale).precision(.fractionLength(0)))
+    static func symbol(for code: String) -> String {
+        symbols[code] ?? code
     }
 
-    static func cents(_ value: Decimal) -> String {
-        value.formatted(.currency(code: "USD").locale(locale).precision(.fractionLength(2)))
+    static func whole(_ value: Decimal, _ code: String) -> String {
+        format(value, code, fractionDigits: 0)
     }
 
-    /// A single transaction shows its own native amount and currency, never
-    /// a converted one (the converted equivalent goes on its own line).
-    static func native(_ value: Decimal, code: String) -> String {
-        switch code {
-        case "BDT": "৳" + value.formatted(.number.locale(locale).precision(.fractionLength(0)))
-        default: cents(value)
-        }
+    static func cents(_ value: Decimal, _ code: String) -> String {
+        format(value, code, fractionDigits: 2)
+    }
+
+    /// Whole units when the amount is whole (Rent, $1,650), cents when it
+    /// isn't (Spotify, $11.99).
+    static func natural(_ value: Decimal, _ code: String) -> String {
+        format(value, code, fractionDigits: value == value.rounded(0) ? 0 : 2)
+    }
+
+    private static func format(_ value: Decimal, _ code: String, fractionDigits: Int) -> String {
+        let symbol = symbols[code] ?? "\(code) "
+        let number = abs(value).formatted(.number.locale(locale).precision(.fractionLength(fractionDigits)))
+        return (value < 0 ? "−" : "") + symbol + number
+    }
+}
+
+extension Decimal {
+    func rounded(_ scale: Int, _ mode: NSDecimalNumber.RoundingMode = .plain) -> Decimal {
+        var source = self
+        var result = Decimal()
+        NSDecimalRound(&result, &source, scale, mode)
+        return result
     }
 }

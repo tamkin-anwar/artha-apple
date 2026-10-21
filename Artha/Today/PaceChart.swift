@@ -3,13 +3,14 @@ import SwiftUI
 
 /// The month so far against an even pace to the budget. Drag across it to
 /// read any day: the selection ticks a haptic on each day and the glass
-/// label follows your finger. It can't be dragged past today.
+/// label follows your finger. It can't be dragged past today. Without a
+/// budget there's no pace to draw, just the month's spending.
 struct PaceChart: View {
     @Environment(MonthModel.self) private var month
     @State private var selectedDay: Int?
 
     private var lineColor: Color {
-        month.status == .onPace ? Palette.accent : Palette.cautionLine
+        !month.hasBudget || month.status == .onPace ? Palette.accent : Palette.cautionLine
     }
 
     private var activeDay: Int {
@@ -19,18 +20,20 @@ struct PaceChart: View {
     /// Headroom above the higher of the budget and what's been spent, so the
     /// glass label always has clear sky to sit in instead of covering the line.
     private var yMax: Double {
-        let budget = (month.budget as NSDecimalNumber).doubleValue
-        return max(budget, month.cumulative.map(\.amount).max() ?? 0) * 1.32
+        let budget = month.budget.map { ($0 as NSDecimalNumber).doubleValue } ?? 0
+        return max(budget, month.cumulative.map(\.amount).max() ?? 0, 1) * 1.32
     }
 
     var body: some View {
         Chart {
-            ForEach([1, month.daysInMonth], id: \.self) { day in
-                LineMark(x: .value("Day", day),
-                         y: .value("Amount", month.paceAmount(on: day)),
-                         series: .value("Line", "Even pace"))
-                    .foregroundStyle(Palette.secondary.opacity(0.55))
-                    .lineStyle(StrokeStyle(lineWidth: 1.5, lineCap: .round, dash: [3, 5]))
+            if month.hasBudget {
+                ForEach([1, month.daysInMonth], id: \.self) { day in
+                    LineMark(x: .value("Day", day),
+                             y: .value("Amount", month.paceAmount(on: day) ?? 0),
+                             series: .value("Line", "Even pace"))
+                        .foregroundStyle(Palette.secondary.opacity(0.55))
+                        .lineStyle(StrokeStyle(lineWidth: 1.5, lineCap: .round, dash: [3, 5]))
+                }
             }
             ForEach(month.cumulative) { point in
                 AreaMark(x: .value("Day", point.day), y: .value("Amount", point.amount))
@@ -53,7 +56,8 @@ struct PaceChart: View {
                     .foregroundStyle(lineColor)
                     .annotation(position: .top, spacing: 10,
                                 overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))) {
-                        ChartLabel(day: activeDay, amount: amount, isToday: activeDay == month.today)
+                        ChartLabel(day: activeDay, amount: amount, isToday: activeDay == month.today,
+                                   monthName: month.monthName, currencyCode: month.currencyCode)
                     }
             }
         }
@@ -66,25 +70,37 @@ struct PaceChart: View {
         .animation(.snappy(duration: 0.45), value: month.spent)
         .frame(height: 230)
         .overlay(alignment: .topTrailing) {
-            VStack(alignment: .trailing, spacing: 0) {
-                Text("Even pace")
-                Text("to \(Money.whole(month.budget))")
+            if let budget = month.budget {
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text("Even pace")
+                    Text("to \(Money.whole(budget, month.currencyCode))")
+                }
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Palette.secondary)
             }
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(Palette.secondary)
         }
         .safeAreaInset(edge: .bottom, spacing: 6) {
             HStack {
-                Text("Oct 1")
+                Text("\(shortMonth) 1")
                 Spacer()
-                Text("Oct \(month.daysInMonth)")
+                Text("\(shortMonth) \(month.daysInMonth)")
             }
             .font(.system(size: 12))
             .foregroundStyle(Palette.secondary)
         }
         .accessibilityElement()
         .accessibilityLabel("Spending this month")
-        .accessibilityValue("\(Money.whole(month.spent)) spent by October \(month.today). Even pace would be \(Money.whole(Decimal(month.paceAmount(on: month.today)))).")
+        .accessibilityValue(accessibilityValue)
+    }
+
+    private var shortMonth: String { String(month.monthName.prefix(3)) }
+
+    private var accessibilityValue: String {
+        let spent = Money.whole(month.spent, month.currencyCode)
+        guard let pace = month.paceAmount(on: month.today) else {
+            return "\(spent) spent so far."
+        }
+        return "\(spent) spent so far. An even pace would be \(Money.whole(Decimal(pace), month.currencyCode))."
     }
 }
 
@@ -92,13 +108,15 @@ private struct ChartLabel: View {
     let day: Int
     let amount: Double
     let isToday: Bool
+    let monthName: String
+    let currencyCode: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(isToday ? "Today, Oct \(day)" : "Oct \(day)")
+            Text(isToday ? "Today, \(monthName.prefix(3)) \(day)" : "\(monthName.prefix(3)) \(day)")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Palette.secondary)
-            Text("\(Money.whole(Decimal(amount))) spent")
+            Text("\(Money.whole(Decimal(amount), currencyCode)) spent")
                 .font(.figure(16))
                 .monospacedDigit()
                 .foregroundStyle(Palette.ink)

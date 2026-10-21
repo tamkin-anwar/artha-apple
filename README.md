@@ -11,18 +11,21 @@ By Anwar Creative Studio. The web app lives at <a href="https://arthaapp.com">ar
 
 ## Status
 
-Prototype of the Today screen with sample data. It exists to feel the design on a real iPhone before the rest is built: the motion, the haptics, the glass. Nothing here talks to the Artha server yet.
+Early build. Signs in to a real Artha account and shows Today from the Artha server: Safe to Spend, the month's pace chart, where the money went, bills coming up and recent transactions. Add saves a real expense or income. Activity, Plan and Wealth come next. Accounts are created on the web for now.
 
 ## What to try
 
+- **Sign in** with your Artha username and password (plus your authenticator code if two-factor sign-in is on). You stay signed in until you sign out from the account menu, or change your password on the web.
 - **Drag across the chart.** A glass label follows your finger and each day ticks a haptic. It stops at today.
 - **Tap "Safe to spend".** Pick Spent this month or Net worth; the big number rolls to the new value.
-- **Tap Add.** The sheet arrives already filled from an Apple Pay tap. Tap "Add $6.75" and watch Safe to Spend, the chart and Where October went update together.
-- **Tap SK.** Switch the sample month between On pace, Ahead of pace, Over budget and First day.
+- **Tap Add.** Type an amount and what it was. Artha picks the category, and Today updates as soon as it saves.
+- **Pull down** on Today to refresh. It also refreshes whenever the app comes back to the foreground.
 
 ## Running it
 
 Open `Artha.xcodeproj` in Xcode, choose the **Artha** scheme and your iPhone, then Run. The project targets iOS 26 or later. Files added inside the `Artha/` folder are picked up by Xcode automatically.
+
+On a real iPhone the app talks to arthaapp.com. In the simulator it talks to the Mac's own dev server at `http://localhost:5050` (start it from the `artha` repo), which is the only plain-HTTP address the app allows (`Config/Info.plist`).
 
 ```bash
 xcodebuild -project Artha.xcodeproj -scheme Artha -destination 'generic/platform=iOS Simulator' build
@@ -36,7 +39,9 @@ swiftc -parse-as-library Scripts/RenderIcon.swift -o /tmp/artha-render-icon && /
 
 ## Shape of the code
 
-- `Artha/Model/MonthModel.swift`: the sample month. Every number on Today is derived from the budget, what has been spent and the bills still due, the same way the real app will derive them from the Artha API.
+- `Artha/API/`: the client for the Artha server's `/api/v1` (the `artha` repo's `artha/blueprints/api`), the response models, and the Keychain where the sign-in token lives.
+- `Artha/Model/`: `AppSession` (signed in or not, and the calls that change it) and `MonthModel` (Today's figures, shaped for display; the app never does its own budget math).
+- `Artha/SignIn/`: the sign-in screen.
 - `Artha/DesignSystem/`: colors, the SF Rounded figure style, money formatting and the orb.
 - `Artha/Today/`: the Today screen, one file per part.
 - `Artha/Add/`: the add sheet.

@@ -10,7 +10,7 @@ struct HeroSection: View {
         VStack(alignment: .leading, spacing: 0) {
             Menu {
                 Picker("Show on Today", selection: $month.heroMetric) {
-                    ForEach(MonthModel.HeroMetric.allCases) { metric in
+                    ForEach(month.availableMetrics) { metric in
                         Text(metric.rawValue).tag(metric)
                     }
                 }
@@ -25,19 +25,19 @@ struct HeroSection: View {
                 .frame(minHeight: 32)
             }
 
-            Text(Money.whole(month.heroValue))
+            Text(Money.whole(month.heroValue, month.currencyCode))
                 .font(.figure(76))
                 .monospacedDigit()
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .minimumScaleFactor(0.5)
                 .contentTransition(.numericText(value: (month.heroValue as NSDecimalNumber).doubleValue))
                 .animation(.snappy(duration: 0.5), value: month.heroValue)
                 .padding(.top, 2)
 
             HStack(spacing: 10) {
-                if month.heroMetric != .netWorth {
-                    StatusBadge(status: month.status, overBy: month.overBy)
+                if month.hasBudget && month.heroMetric != .netWorth {
+                    StatusBadge(status: month.status, overBy: month.overBy, currencyCode: month.currencyCode)
                 }
                 Text(subtitle)
                     .font(.system(size: 15))
@@ -53,13 +53,17 @@ struct HeroSection: View {
     private var subtitle: String {
         switch month.heroMetric {
         case .safeToSpend:
-            month.status == .over
-                ? "November starts in \(month.daysLeft) days"
-                : "\(Money.whole(month.perDay)) a day for \(month.daysLeft) days"
+            if month.status == .over {
+                return "\(month.nextMonthName) starts in \(month.daysLeft) \(month.daysLeft == 1 ? "day" : "days")"
+            }
+            return "\(Money.whole(month.perDay, month.currencyCode)) a day for \(month.daysLeft) \(month.daysLeft == 1 ? "day" : "days")"
         case .spentThisMonth:
-            "of \(Money.whole(month.budget)) budget"
+            if let budget = month.budget {
+                return "of \(Money.whole(budget, month.currencyCode)) budget"
+            }
+            return "so far in \(month.monthName)"
         case .netWorth:
-            "Up $1,140 this month"
+            return "Across \(month.accountCount) \(month.accountCount == 1 ? "account" : "accounts")"
         }
     }
 }
@@ -68,6 +72,7 @@ struct HeroSection: View {
 struct StatusBadge: View {
     let status: MonthModel.Status
     let overBy: Decimal
+    let currencyCode: String
 
     var body: some View {
         HStack(spacing: 5) {
@@ -89,7 +94,7 @@ struct StatusBadge: View {
         switch status {
         case .onPace: "On pace"
         case .ahead: "Ahead of pace"
-        case .over: "Over by \(Money.whole(overBy))"
+        case .over: "Over by \(Money.whole(overBy, currencyCode))"
         }
     }
 

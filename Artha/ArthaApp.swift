@@ -2,19 +2,47 @@ import SwiftUI
 
 @main
 struct ArthaApp: App {
-    @State private var month = MonthModel()
+    @State private var session = AppSession()
 
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environment(month)
+                .environment(session)
+                .environment(session.month)
         }
     }
 }
 
-/// The four tabs plus Add, which sits in its own circle beside the tab bar
-/// (the search role's slot) and opens a sheet instead of a screen.
+/// Signed in or not, and keeping Today fresh: it refreshes whenever the
+/// app comes back to the foreground, since a purchase made on the web (or
+/// a bill that came due overnight) should already be there when you look.
 struct RootView: View {
+    @Environment(AppSession.self) private var session
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        Group {
+            switch session.phase {
+            case .checking:
+                Palette.ground.ignoresSafeArea()
+            case .signedOut:
+                SignInView()
+            case .signedIn:
+                MainTabs()
+            }
+        }
+        .task { await session.start() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await session.refresh() }
+            }
+        }
+    }
+}
+
+/// The four tabs plus Add, which sits in its own spot beside them (the
+/// search role's slot) and opens a sheet instead of a screen.
+struct MainTabs: View {
     enum Destination: Hashable { case today, activity, plan, wealth, add }
 
     @State private var selection: Destination = .today
@@ -57,7 +85,7 @@ private struct ComingNext: View {
     let symbol: String
 
     var body: some View {
-        ContentUnavailableView(title, systemImage: symbol, description: Text("Designed after Today is settled."))
+        ContentUnavailableView(title, systemImage: symbol, description: Text("Coming in a later build."))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Palette.ground)
     }

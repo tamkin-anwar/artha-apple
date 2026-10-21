@@ -1,20 +1,11 @@
 import Foundation
 import Observation
 
-/// Sample month for the prototype. Every figure on Today is derived from
-/// the few numbers here (budget, what's been spent, bills still due), the
-/// way the real app will derive them from the Artha API, so switching
-/// scenarios keeps every number on screen consistent with the others.
+/// Today's month, shaped for the screens. Every figure comes from the
+/// server's /api/v1/today (the same code the web Dashboard runs), so the
+/// app never does its own budget math; this only reshapes it for display.
 @Observable
 final class MonthModel {
-    enum Scenario: String, CaseIterable, Identifiable {
-        case onPace = "On pace"
-        case ahead = "Ahead of pace"
-        case over = "Over budget"
-        case firstDay = "First day"
-        var id: String { rawValue }
-    }
-
     enum HeroMetric: String, CaseIterable, Identifiable {
         case safeToSpend = "Safe to spend"
         case spentThisMonth = "Spent this month"
@@ -25,25 +16,25 @@ final class MonthModel {
     enum Status { case onPace, ahead, over }
 
     struct Bill: Identifiable {
-        let id = UUID()
+        let id: String
         let name: String
         let label: String
         let date: String
         let amount: Decimal
-        let isThisMonth: Bool
+        let currencyCode: String
         let isSoon: Bool
     }
 
     struct Expense: Identifiable {
-        let id = UUID()
+        let id: Int
         let merchant: String
         let detail: String
         let symbol: String
         let amount: Decimal
         let currencyCode: String
-        /// Only for an expense in another currency: its USD equivalent,
-        /// shown beside the native amount, never instead of it.
-        let usdEquivalent: Decimal?
+        /// Only for a transaction in another currency: its equivalent in
+        /// the display currency, shown beside the real amount.
+        let displayEquivalent: Decimal?
     }
 
     struct DayPoint: Identifiable {
@@ -58,82 +49,91 @@ final class MonthModel {
         var name: String { id }
     }
 
-    var scenario: Scenario = .onPace
+    private(set) var summary: TodaySummary?
     var heroMetric: HeroMetric = .safeToSpend
-    private(set) var added: [Expense] = []
     /// Bumps on every add so Today can play one success haptic.
     private(set) var addCount = 0
 
-    let budget: Decimal = 3400
-    let today = 19
-    let daysInMonth = 31
-    let monthName = "October"
-    let netWorth: Decimal = 48210
-
-    let bills: [Bill] = [
-        Bill(name: "Spotify", label: "WED · 2 DAYS", date: "21", amount: 11.99, isThisMonth: true, isSoon: true),
-        Bill(name: "Phone bill", label: "SAT", date: "24", amount: 45, isThisMonth: true, isSoon: false),
-        Bill(name: "Rent", label: "NOV", date: "01", amount: 1650, isThisMonth: false, isSoon: false),
-    ]
-
-    private let baseRecent: [Expense] = [
-        Expense(merchant: "Trader Joe's", detail: "Groceries · 8:12 AM", symbol: "cart", amount: 48.20, currencyCode: "USD", usdEquivalent: nil),
-        Expense(merchant: "Lyft", detail: "Transport · Yesterday", symbol: "car", amount: 8.45, currencyCode: "USD", usdEquivalent: nil),
-        Expense(merchant: "Family, Dhaka", detail: "Transfer · Saturday", symbol: "arrow.left.arrow.right", amount: 12000, currencyCode: "BDT", usdEquivalent: 98.36),
-    ]
-
-    /// Cumulative spending through each day of the on-pace month.
-    private let onPaceCumulative: [Decimal] = [95, 180, 260, 410, 470, 540, 690, 760, 830, 980, 1050, 1120, 1260, 1330, 1490, 1560, 1700, 1996, 2059]
-
-    private var scenarioSpent: Decimal {
-        switch scenario {
-        case .onPace: 2059
-        case .ahead: 3120
-        case .over: 3483
-        case .firstDay: 0
+    func apply(_ summary: TodaySummary) {
+        self.summary = summary
+        if !availableMetrics.contains(heroMetric) {
+            heroMetric = availableMetrics.first ?? .spentThisMonth
         }
     }
 
-    var hasData: Bool { scenario != .firstDay || !added.isEmpty }
-
-    var spent: Decimal { scenarioSpent + added.reduce(0) { $0 + $1.amount } }
-
-    var billsDueThisMonth: Decimal {
-        bills.filter(\.isThisMonth).reduce(0) { $0 + $1.amount }
+    func clear() {
+        summary = nil
+        heroMetric = .safeToSpend
     }
 
-    var safeToSpend: Decimal { max(0, budget - spent - billsDueThisMonth) }
-    var overBy: Decimal { max(0, spent + billsDueThisMonth - budget) }
-    var daysLeft: Int { daysInMonth - today + 1 }
+    func noteAdded() { addCount += 1 }
 
-    var perDay: Decimal {
-        let raw = (safeToSpend as NSDecimalNumber).doubleValue / Double(daysLeft)
-        return Decimal(raw.rounded(.down))
+    // MARK: Basics
+
+    var currencyCode: String { summary?.currency ?? "USD" }
+    var hasBudget: Bool { summary?.safeToSpend != nil }
+    var today: Int { summary?.month.day ?? 1 }
+    var daysInMonth: Int { summary?.month.daysInMonth ?? 30 }
+    var daysLeft: Int { summary?.month.daysLeft ?? 1 }
+    var monthName: String { summary?.month.name ?? "" }
+    var nextMonthName: String {
+        guard let end = Date.apiDay(summary?.month.end),
+              let next = Calendar.current.date(byAdding: .day, value: 1, to: end) else { return "Next month" }
+        return next.formatted(.dateTime.month(.wide))
     }
 
-    /// What an even pace to the budget would have spent by the end of `day`.
-    func paceAmount(on day: Int) -> Double {
-        (budget as NSDecimalNumber).doubleValue * Double(day - 1) / Double(daysInMonth - 1)
+    /// A brand-new account: no budget yet and nothing recorded.
+    var isEmpty: Bool {
+        guard let summary else { return true }
+        return summary.safeToSpend == nil && summary.recent.isEmpty && Decimal.api(summary.spent) == 0
     }
+
+    var headerDate: String {
+        guard let date = Date.apiDay(summary?.date) else { return "" }
+        return date.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()).uppercased()
+    }
+
+    // MARK: Money
+
+    var spent: Decimal { Decimal.api(summary?.spent) }
+    var budget: Decimal? { summary?.budget.map { Decimal.api($0.cap) } }
+    var safeToSpend: Decimal { max(0, Decimal.api(summary?.safeToSpend?.amount)) }
+    var overBy: Decimal { Decimal.api(summary?.safeToSpend?.overBy) }
+    /// Rounded down to whole units: a daily allowance should never promise
+    /// more than is actually safe ($109.83 reads as $109, not $110).
+    var perDay: Decimal { Decimal.api(summary?.safeToSpend?.perDay).rounded(0, .down) }
+    var netWorth: Decimal? { summary?.netWorth.map { Decimal.api($0.amount) } }
+    var accountCount: Int { summary?.netWorth?.accountCount ?? 0 }
 
     var status: Status {
-        if overBy > 0 { return .over }
-        let ahead = (spent as NSDecimalNumber).doubleValue - paceAmount(on: today)
-        return ahead > (budget as NSDecimalNumber).doubleValue * 0.05 ? .ahead : .onPace
+        switch summary?.safeToSpend?.status {
+        case "over": .over
+        case "ahead": .ahead
+        default: .onPace
+        }
     }
 
-    /// Day-by-day cumulative spending, scaled to the scenario; anything added
-    /// in this session lands on today.
+    var availableMetrics: [HeroMetric] {
+        var metrics: [HeroMetric] = []
+        if hasBudget { metrics.append(.safeToSpend) }
+        metrics.append(.spentThisMonth)
+        if netWorth != nil { metrics.append(.netWorth) }
+        return metrics
+    }
+
+    var heroValue: Decimal {
+        switch heroMetric {
+        case .safeToSpend: safeToSpend
+        case .spentThisMonth: spent
+        case .netWorth: netWorth ?? 0
+        }
+    }
+
+    // MARK: Chart
+
     var cumulative: [DayPoint] {
-        guard hasData else { return [] }
-        let base = (onPaceCumulative.last! as NSDecimalNumber).doubleValue
-        let target = (scenarioSpent as NSDecimalNumber).doubleValue
-        let scale = scenario == .firstDay ? 0 : target / base
-        let extra = (added.reduce(0) { $0 + $1.amount } as NSDecimalNumber).doubleValue
-        return onPaceCumulative.enumerated().map { index, value in
-            let day = index + 1
-            let amount = (value as NSDecimalNumber).doubleValue * scale + (day == today ? extra : 0)
-            return DayPoint(day: day, amount: amount)
+        (summary?.spendingByDay ?? []).map {
+            DayPoint(day: $0.day, amount: (Decimal.api($0.spent) as NSDecimalNumber).doubleValue)
         }
     }
 
@@ -141,30 +141,94 @@ final class MonthModel {
         cumulative.first { $0.day == day }?.amount
     }
 
-    var recent: [Expense] { added.reversed() + baseRecent }
+    /// An even pace to the budget through the end of `day`, the same line
+    /// the server's "ahead of pace" status is measured against.
+    func paceAmount(on day: Int) -> Double? {
+        guard let budget else { return nil }
+        return (budget as NSDecimalNumber).doubleValue * Double(day) / Double(daysInMonth)
+    }
 
-    /// Top three categories by size, plus everything else, summing to `spent`.
+    // MARK: Sections
+
+    /// The top three categories by spending, plus everything else.
     var shares: [Share] {
-        let base: [(String, Decimal)] = [("Bills", 440), ("Groceries", 412), ("Shopping", 318)]
-        let scale = (scenarioSpent as NSDecimalNumber).doubleValue / 2059
-        var result = base.map { name, value in
-            Share(id: name, amount: Decimal(((value as NSDecimalNumber).doubleValue * scale).rounded()))
+        let categories = (summary?.categories ?? []).map { (label: $0.label, amount: Decimal.api($0.amount)) }
+        guard categories.count > 4 else {
+            return categories.map { Share(id: $0.label, amount: $0.amount) }
         }
-        let named = result.reduce(0) { $0 + $1.amount }
-        result.append(Share(id: "Everything else", amount: spent - named))
-        return result
+        let top = categories.prefix(3).map { Share(id: $0.label, amount: $0.amount) }
+        let rest = categories.dropFirst(3).reduce(Decimal(0)) { $0 + $1.amount }
+        return top + [Share(id: "Everything else", amount: rest)]
     }
 
-    var heroValue: Decimal {
-        switch heroMetric {
-        case .safeToSpend: safeToSpend
-        case .spentThisMonth: spent
-        case .netWorth: netWorth
+    var bills: [Bill] {
+        guard let summary, let today = Date.apiDay(summary.date) else { return [] }
+        let calendar = Calendar.current
+        return summary.comingUp.prefix(3).compactMap { bill in
+            guard let due = Date.apiDay(bill.due) else { return nil }
+            let sameMonth = calendar.isDate(due, equalTo: today, toGranularity: .month)
+            let weekday = due.formatted(.dateTime.weekday(.abbreviated)).uppercased()
+            let label: String
+            switch bill.daysAway {
+            case 0: label = "TODAY"
+            case 1: label = "TOMORROW"
+            case 2...6 where sameMonth: label = "\(weekday) · \(bill.daysAway) DAYS"
+            default: label = sameMonth ? weekday : due.formatted(.dateTime.month(.abbreviated)).uppercased()
+            }
+            return Bill(
+                id: "\(bill.description)-\(bill.due)",
+                name: bill.description,
+                label: label,
+                date: String(format: "%02d", calendar.component(.day, from: due)),
+                amount: Decimal.api(bill.amount),
+                currencyCode: bill.currency,
+                isSoon: bill.daysAway <= 2
+            )
         }
     }
 
-    func add(_ expense: Expense) {
-        added.append(expense)
-        addCount += 1
+    var recent: [Expense] {
+        guard let summary else { return [] }
+        let today = Date.apiDay(summary.date)
+        return summary.recent.map { tx in
+            Expense(
+                id: tx.id,
+                merchant: tx.description,
+                detail: "\(tx.type == "income" ? "Income" : tx.categoryLabel) · \(Self.relativeDay(tx.date, today: today))",
+                symbol: Self.symbol(for: tx.category, type: tx.type),
+                amount: Decimal.api(tx.amount),
+                currencyCode: tx.currency,
+                displayEquivalent: tx.displayAmount.map { Decimal.api($0) }
+            )
+        }
+    }
+
+    private static func relativeDay(_ string: String?, today: Date?) -> String {
+        guard let date = Date.apiDay(string) else { return "" }
+        let calendar = Calendar.current
+        if let today, calendar.isDate(date, inSameDayAs: today) { return "Today" }
+        if let today, let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
+           calendar.isDate(date, inSameDayAs: yesterday) { return "Yesterday" }
+        if let today, let days = calendar.dateComponents([.day], from: date, to: today).day, days < 7 {
+            return date.formatted(.dateTime.weekday(.wide))
+        }
+        return date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    private static func symbol(for category: String?, type: String) -> String {
+        if type == "income" { return "arrow.down.left" }
+        switch category {
+        case "groceries": return "cart"
+        case "dining": return "fork.knife"
+        case "transport": return "car"
+        case "housing": return "house"
+        case "utilities": return "bolt"
+        case "subscriptions": return "repeat"
+        case "shopping": return "bag"
+        case "health": return "heart"
+        case "entertainment": return "film"
+        case "debt": return "creditcard"
+        default: return "circle.grid.2x2"
+        }
     }
 }

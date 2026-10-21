@@ -1,0 +1,139 @@
+import Foundation
+
+// Mirrors the JSON from the Artha server's /api/v1 (the artha repo's
+// artha/blueprints/api/routes.py). Keys arrive in snake_case and are
+// decoded with .convertFromSnakeCase. Money arrives as two-decimal strings
+// ("1284.01") and is turned into Decimal with `Decimal.api(_:)`, never Double.
+
+nonisolated struct APIUser: Decodable, Sendable {
+    let id: Int
+    let username: String
+    let email: String?
+    let firstName: String?
+    let lastName: String?
+    let currency: String
+    let timezone: String?
+    let twoFactorEnabled: Bool
+
+    var initials: String {
+        let parts = [firstName, lastName].compactMap { $0?.first }.map(String.init)
+        if !parts.isEmpty { return parts.joined().uppercased() }
+        return String(username.prefix(2)).uppercased()
+    }
+}
+
+nonisolated struct SessionResponse: Decodable, Sendable {
+    let token: String
+    let deletionCanceled: Bool
+    let user: APIUser
+}
+
+nonisolated struct UserEnvelope: Decodable, Sendable {
+    let user: APIUser
+}
+
+nonisolated struct TransactionEnvelope: Decodable, Sendable {
+    let transaction: APITransaction
+}
+
+nonisolated struct APITransaction: Decodable, Sendable, Identifiable {
+    let id: Int
+    let description: String
+    let amount: String
+    let currency: String
+    let type: String
+    let category: String?
+    let categoryLabel: String
+    let date: String?
+    let isRecurring: Bool
+    let recurrenceInterval: String?
+    /// Only when `currency` isn't the person's display currency: the same
+    /// amount converted, shown beside the real one, never instead of it.
+    let displayAmount: String?
+}
+
+nonisolated struct TodaySummary: Decodable, Sendable {
+    nonisolated struct Month: Decodable, Sendable {
+        let name: String
+        let start: String
+        let end: String
+        let day: Int
+        let daysInMonth: Int
+        let daysLeft: Int
+    }
+
+    nonisolated struct Budget: Decodable, Sendable {
+        let cap: String
+        let spent: String
+        let percentUsed: Double
+        let tier: String
+    }
+
+    nonisolated struct SafeToSpend: Decodable, Sendable {
+        let amount: String
+        let perDay: String
+        let billsStillDue: String
+        let overBy: String
+        let status: String
+        let evenPaceSpent: String
+    }
+
+    nonisolated struct DaySpend: Decodable, Sendable {
+        let day: Int
+        let spent: String
+    }
+
+    nonisolated struct Category: Decodable, Sendable {
+        let key: String?
+        let label: String
+        let amount: String
+    }
+
+    nonisolated struct Bill: Decodable, Sendable {
+        let description: String
+        let amount: String
+        let currency: String
+        let category: String?
+        let due: String
+        let daysAway: Int
+    }
+
+    nonisolated struct NetWorth: Decodable, Sendable {
+        let amount: String
+        let assets: String
+        let liabilities: String
+        let accountCount: Int
+    }
+
+    let date: String
+    let currency: String
+    let month: Month
+    let spent: String
+    let income: String
+    let budget: Budget?
+    let safeToSpend: SafeToSpend?
+    let spendingByDay: [DaySpend]
+    let categories: [Category]
+    let comingUp: [Bill]
+    let recent: [APITransaction]
+    let netWorth: NetWorth?
+}
+
+extension Decimal {
+    /// A money string from the API. Malformed input reads as zero rather
+    /// than crashing a screen over one bad field.
+    nonisolated static func api(_ string: String?) -> Decimal {
+        guard let string, let value = Decimal(string: string, locale: Locale(identifier: "en_US_POSIX")) else { return 0 }
+        return value
+    }
+}
+
+extension Date {
+    /// "2026-10-20" from the API, as a calendar date at local midnight.
+    nonisolated static func apiDay(_ string: String?) -> Date? {
+        guard let string else { return nil }
+        let parts = string.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3 else { return nil }
+        return Calendar.current.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+    }
+}
