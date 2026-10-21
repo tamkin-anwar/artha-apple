@@ -120,6 +120,8 @@ final class MonthModel {
     var hasBudget: Bool { summary?.safeToSpend != nil }
     /// Purchases that logged themselves and are waiting for a look.
     var toReview: Int { summary?.toReview ?? 0 }
+    /// Set once Apple Pay has logged something on its own: the automation works.
+    var applePay: TodaySummary.ApplePayStatus? { summary?.applePay }
     var today: Int { summary?.month.day ?? 1 }
     var daysInMonth: Int { summary?.month.daysInMonth ?? 30 }
     var daysLeft: Int { summary?.month.daysLeft ?? 1 }

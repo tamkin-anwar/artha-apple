@@ -94,13 +94,17 @@ struct AddSheet: View {
 
             Spacer(minLength: 20)
 
-            Button { showingApplePaySetup = true } label: {
-                Label("Log Apple Pay purchases automatically", systemImage: "wave.3.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Palette.accent)
-                    .frame(minHeight: 44)
+            // Only until Apple Pay has logged something on its own: after
+            // that it's set up, and the link would just be clutter here.
+            if month.applePay == nil {
+                Button { showingApplePaySetup = true } label: {
+                    Label("Paid with Apple Pay? Log it automatically", systemImage: "wave.3.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Palette.accent)
+                        .frame(minHeight: 44)
+                }
+                .padding(.bottom, 6)
             }
-            .padding(.bottom, 6)
 
             Button(action: save) {
                 ZStack {

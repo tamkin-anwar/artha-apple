@@ -246,6 +246,41 @@ nonisolated struct TodaySummary: Decodable, Sendable {
     let netWorth: NetWorth?
     /// Purchases that logged themselves and haven't been looked at yet.
     let toReview: Int?
+    /// The newest purchase Apple Pay logged on its own; nil until the
+    /// automation has logged one.
+    let applePay: ApplePayStatus?
+
+    nonisolated struct ApplePayStatus: Decodable, Sendable {
+        let description: String
+        let date: String?
+        let count: Int
+    }
+}
+
+/// /api/v1/history: the last few months, oldest first.
+nonisolated struct HistorySummary: Decodable, Sendable {
+    nonisolated struct Month: Decodable, Sendable {
+        nonisolated struct Category: Decodable, Sendable {
+            let key: String?
+            let label: String
+            let amount: String
+        }
+
+        let month: String
+        let label: String
+        let name: String
+        let year: Int
+        let isCurrent: Bool
+        /// Only on a first month that began partway through ("2026-08-27").
+        let started: String?
+        let spent: String
+        let income: String
+        let categories: [Category]
+    }
+
+    let currency: String
+    let months: [Month]
+    let averageSpent: String?
 }
 
 nonisolated struct ReviewedResponse: Decodable, Sendable {

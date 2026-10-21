@@ -117,6 +117,32 @@ struct FirstDay: View {
             .background(Palette.surface, in: .rect(cornerRadius: 22))
             .padding(.top, 22)
 
+            Button { session.isShowingApplePaySetup = true } label: {
+                HStack(spacing: 14) {
+                    Image(systemName: "wave.3.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Palette.accent)
+                        .frame(width: 30, height: 30)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Optional: log Apple Pay on its own")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Palette.ink)
+                        Text("A one-time setup in Shortcuts. Then every tap to pay shows up here")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Palette.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Palette.secondary)
+                }
+                .padding(16)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .background(Palette.surface, in: .rect(cornerRadius: 22))
+            .padding(.top, 12)
+
             VStack(spacing: 4) {
                 Text("Your month will draw itself here")
                     .font(.system(size: 15, weight: .semibold))

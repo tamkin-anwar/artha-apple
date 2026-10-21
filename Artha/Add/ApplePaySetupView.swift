@@ -2,22 +2,25 @@ import SwiftUI
 
 /// How to make every Apple Pay tap log itself. iOS doesn't let an app
 /// create the Wallet automation for someone, so this walks through the
-/// one-time setup in Shortcuts as plainly as possible.
+/// one-time setup in Shortcuts with the exact names on screen (iOS 26
+/// renamed the trigger from Transaction to Wallet), and once a purchase
+/// has come through it says so, instead of leaving people to wonder.
 struct ApplePaySetupView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(MonthModel.self) private var month
 
     private let steps: [(title: String, detail: String)] = [
-        ("Open Shortcuts and start an automation",
-         "Go to the Automation tab and tap the plus button."),
-        ("Choose Transaction",
-         "Pick the cards to include, then choose Run Immediately so it never asks first."),
-        ("Add Artha's action",
-         "Start a new blank automation, search for Artha, and add Log Purchase."),
-        ("Fill in Amount and Merchant",
-         "Tap Amount and choose Shortcut Input, then Amount. Do the same for Merchant."),
+        ("Start a new automation",
+         "In Shortcuts, tap Automation at the bottom, then the plus button."),
+        ("Choose Wallet",
+         "It's called Transaction before iOS 26. Pick the cards to include, choose Run Immediately, then tap Next."),
+        ("Add Artha's Log Purchase",
+         "Tap New Blank Automation, then Add Action. Search for Artha and tap Log Purchase."),
+        ("Connect Amount and Merchant",
+         "Tap Amount and choose Shortcut Input, then Amount. Tap Merchant and choose Shortcut Input, then Merchant."),
         ("Tap Done",
-         "Your next Apple Pay purchase shows up in Activity, already sorted into a category."),
+         "If your iPhone asks whether Artha can run, choose Always Allow. Your next tap to pay shows up on Today, ready for a quick review."),
     ]
 
     var body: some View {
@@ -33,11 +36,16 @@ struct ApplePaySetupView: View {
                         .tracking(-0.4)
                         .foregroundStyle(Palette.ink)
                         .padding(.top, 14)
-                    Text("Set it up once in Shortcuts. After that, every tap with Apple Pay logs itself in Artha, in the currency you paid in, without opening the app.")
+                    Text("Set it up once in Shortcuts. After that, every tap with Apple Pay logs itself in Artha, in the currency you paid in, without opening the app. It takes about two minutes.")
                         .font(.system(size: 16))
                         .foregroundStyle(Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 8)
+
+                    if let status = month.applePay {
+                        WorkingBanner(status: status)
+                            .padding(.top, 20)
+                    }
 
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
@@ -76,6 +84,8 @@ struct ApplePaySetupView: View {
                             text: "If a purchase doesn't show up, check Settings, then Cellular, and make sure Wallet can use cellular data.")
                         Tip(symbol: "dollarsign.arrow.circlepath",
                             text: "A purchase in a currency Artha doesn't support yet isn't logged, so nothing is ever recorded in the wrong currency.")
+                        Tip(symbol: "hand.raised",
+                            text: "If Artha asks for permission each time you pay, edit the automation and make sure Run Immediately is on.")
                         Tip(symbol: "lock",
                             text: "Artha only receives the amount and merchant Wallet shares with the automation. It never sees your card number.")
                     }
@@ -109,6 +119,38 @@ struct ApplePaySetupView: View {
             }
         }
         .presentationDragIndicator(.visible)
+    }
+
+    /// Proof it works: the newest purchase Apple Pay logged on its own.
+    private struct WorkingBanner: View {
+        let status: TodaySummary.ApplePayStatus
+
+        var body: some View {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Palette.good)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("It's working")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Palette.ink)
+                    Text(detail)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Palette.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(14)
+            .background(Palette.good.opacity(0.12), in: .rect(cornerRadius: 16))
+            .accessibilityElement(children: .combine)
+        }
+
+        private var detail: String {
+            let day = Date.apiDay(status.date ?? "")?.formatted(.dateTime.month(.abbreviated).day()) ?? ""
+            let last = day.isEmpty ? "Last logged \(status.description)." : "Last logged \(status.description) on \(day)."
+            return status.count == 1 ? "\(last) 1 purchase so far." : "\(last) \(status.count) purchases so far."
+        }
     }
 
     private struct Tip: View {

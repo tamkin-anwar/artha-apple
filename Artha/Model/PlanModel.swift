@@ -23,6 +23,8 @@ final class PlanModel {
 
     private(set) var summary: PlanSummary?
     private(set) var bills: [BillRow] = []
+    /// The last six months, for "Month by month". Loaded beside the plan.
+    private(set) var history: HistorySummary?
     private(set) var error: String?
     private(set) var lastLoaded: Date?
 
@@ -73,6 +75,7 @@ final class PlanModel {
     // MARK: Loading
 
     func load() async {
+        async let months: Void = loadHistory()
         do {
             let (summary, data): (PlanSummary, Data) = try await api.fetch("plan")
             apply(summary)
@@ -83,12 +86,24 @@ final class PlanModel {
         } catch {
             self.error = "Artha couldn't load your plan. Pull down to try again."
         }
+        await months
+    }
+
+    /// Past months only change when this one does, so a failure here just
+    /// keeps whatever was showing; the plan's own error covers being offline.
+    private func loadHistory() async {
+        guard let (history, data): (HistorySummary, Data) = try? await api.fetch("history?months=6") else { return }
+        self.history = history
+        ResponseCache.save(data, as: .history)
     }
 
     /// Shows the last plan this device saw while the fresh one loads.
     func restore(from data: Data) {
         guard summary == nil, let cached = api.decode(PlanSummary.self, from: data) else { return }
         apply(cached, fresh: false)
+        if history == nil, let saved = ResponseCache.load(.history) {
+            history = api.decode(HistorySummary.self, from: saved)
+        }
     }
 
     private func apply(_ summary: PlanSummary, fresh: Bool = true) {
@@ -100,6 +115,7 @@ final class PlanModel {
     func clear() {
         summary = nil
         bills = []
+        history = nil
         error = nil
         lastLoaded = nil
     }

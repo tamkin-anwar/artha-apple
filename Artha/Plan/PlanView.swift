@@ -22,6 +22,7 @@ struct PlanView: View {
                         PlanCard()
                         BillsSection()
                         LimitsSection(editingLimit: $editingLimit)
+                        MonthByMonth()
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 6)
