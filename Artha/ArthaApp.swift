@@ -9,6 +9,7 @@ struct ArthaApp: App {
             RootView()
                 .environment(session)
                 .environment(session.month)
+                .onOpenURL { session.open($0) }
         }
     }
 }
@@ -38,6 +39,12 @@ struct RootView: View {
             }
         }
     }
+}
+
+/// Where a widget, the Control Center button or an artha:// link can send
+/// someone.
+enum AppRoute: String {
+    case today, activity, plan, wealth, add
 }
 
 /// The four tabs plus Add, which sits in its own spot beside them (the
@@ -84,6 +91,17 @@ struct MainTabs: View {
         }
         .sheet(isPresented: $session.isShowingApplePaySetup) {
             ApplePaySetupView()
+        }
+        .onChange(of: session.route, initial: true) { _, route in
+            guard let route else { return }
+            session.route = nil
+            switch route {
+            case .today: selection = .today
+            case .activity: selection = .activity
+            case .plan: selection = .plan
+            case .wealth: selection = .wealth
+            case .add: isAdding = true
+            }
         }
     }
 }

@@ -118,6 +118,13 @@ enum PurchaseLogger {
         }
 
         defaults.set(["key": key, "at": Date.now.timeIntervalSince1970], forKey: lastLogKey)
+
+        // Safe to Spend just changed: hand the widgets the new number now,
+        // so it's right by the time the phone is back in a pocket.
+        if let (_, today): (TodaySummary, Data) = try? await api.fetch("today") {
+            AppSession.publishToWidgets(today)
+        }
+
         let tx = envelope.transaction
         let logged = "Logged \(Money.cents(Decimal.api(tx.amount), tx.currency)) at \(tx.description)"
         return tx.category == nil ? "\(logged)." : "\(logged), under \(tx.categoryLabel)."

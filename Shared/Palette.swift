@@ -89,6 +89,19 @@ enum Money {
         format(value, code, fractionDigits: value == value.rounded(0) ? 0 : 2)
     }
 
+    /// Short enough for a Lock Screen circle: $232, $1.2K, $154K, $1.3M.
+    static func compact(_ value: Decimal, _ code: String) -> String {
+        let symbol = symbols[code] ?? "\(code) "
+        let number = (abs(value) as NSDecimalNumber).doubleValue
+        let sign = value < 0 ? "−" : ""
+        switch number {
+        case ..<1_000: return sign + symbol + String(Int(number.rounded(.down)))
+        case ..<10_000: return sign + symbol + String(format: "%.1fK", (number / 100).rounded(.down) / 10)
+        case ..<1_000_000: return sign + symbol + "\(Int(number / 1_000))K"
+        default: return sign + symbol + String(format: "%.1fM", (number / 100_000).rounded(.down) / 10)
+        }
+    }
+
     private static func format(_ value: Decimal, _ code: String, fractionDigits: Int) -> String {
         let symbol = symbols[code] ?? "\(code) "
         let number = abs(value).formatted(.number.locale(locale).precision(.fractionLength(fractionDigits)))

@@ -10,5 +10,22 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<!-- The Keychain group the sign-in token is shared through with the
+	     widgets (see Shared/Keychain.swift). -->
+	<key>ArthaKeychainGroup</key>
+	<string>$(AppIdentifierPrefix)studio.anwarcreative.artha.shared</string>
+	<!-- artha://add, artha://plan and so on: where widgets and the Control
+	     Center button open the app to. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>studio.anwarcreative.artha</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>artha</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

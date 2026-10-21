@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import WidgetKit
 
 /// Whether this device is signed in, who to, and the calls that change
 /// that. Owns the API client and every screen's model.
@@ -29,6 +30,8 @@ final class AppSession {
     var isEditingBudget = false
     /// Opens the Apple Pay automation guide from anywhere.
     var isShowingApplePaySetup = false
+    /// Where a widget tap or artha:// link asked to go; MainTabs consumes it.
+    var route: AppRoute?
 
     let month = MonthModel()
     let activity: ActivityModel
@@ -56,6 +59,9 @@ final class AppSession {
             return
         }
         api.token = token
+        // Tokens saved before the widgets existed move into the Keychain
+        // group the widgets can read.
+        Keychain.migrateToSharedGroup(account: Keychain.tokenAccount)
         restoreFromCache()
         phase = .signedIn
         await refresh()
@@ -99,6 +105,7 @@ final class AppSession {
             let (summary, data) = try await today
             month.apply(summary)
             ResponseCache.save(data, as: .today)
+            Self.publishToWidgets(data)
             refreshError = nil
             lastRefresh = .now
         } catch APIError.unauthorized {
@@ -171,9 +178,25 @@ final class AppSession {
         if let data = ResponseCache.load(.wealth) { wealth.restore(from: data) }
     }
 
+    /// Hands the widgets fresh numbers, and asks them to redraw only when
+    /// something actually changed.
+    nonisolated static func publishToWidgets(_ todayData: Data) {
+        if WidgetStore.saveToday(todayData) {
+            WidgetCenter.shared.reloadTimelines(ofKind: WidgetStore.glanceKind)
+        }
+    }
+
+    /// artha://add, artha://plan and so on.
+    func open(_ url: URL) {
+        guard url.scheme == "artha", let route = AppRoute(rawValue: url.host() ?? "") else { return }
+        self.route = route
+    }
+
     private func signOutLocally() {
         Keychain.delete(account: Keychain.tokenAccount)
         ResponseCache.clear()
+        WidgetStore.clear()
+        WidgetCenter.shared.reloadAllTimelines()
         api.token = nil
         user = nil
         lastRefresh = nil
