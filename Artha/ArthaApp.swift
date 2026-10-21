@@ -82,5 +82,8 @@ struct MainTabs: View {
         .sheet(isPresented: $session.isEditingBudget) {
             BudgetSheet()
         }
+        .sheet(isPresented: $session.isShowingApplePaySetup) {
+            ApplePaySetupView()
+        }
     }
 }

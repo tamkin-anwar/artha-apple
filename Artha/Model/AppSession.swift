@@ -27,6 +27,8 @@ final class AppSession {
     var notice: String?
     /// Opens the monthly budget editor from anywhere (Today's cards, Plan).
     var isEditingBudget = false
+    /// Opens the Apple Pay automation guide from anywhere.
+    var isShowingApplePaySetup = false
 
     let month = MonthModel()
     let activity: ActivityModel
@@ -181,6 +183,7 @@ final class AppSession {
         wealth.clear()
         refreshError = nil
         isEditingBudget = false
+        isShowingApplePaySetup = false
         phase = .signedOut
     }
 

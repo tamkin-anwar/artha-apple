@@ -16,6 +16,7 @@ struct AddSheet: View {
     @State private var description = ""
     @State private var isSaving = false
     @State private var error: String?
+    @State private var showingApplePaySetup = false
     @FocusState private var focus: Field?
 
     var body: some View {
@@ -93,6 +94,14 @@ struct AddSheet: View {
 
             Spacer(minLength: 20)
 
+            Button { showingApplePaySetup = true } label: {
+                Label("Log Apple Pay purchases automatically", systemImage: "wave.3.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Palette.accent)
+                    .frame(minHeight: 44)
+            }
+            .padding(.bottom, 6)
+
             Button(action: save) {
                 ZStack {
                     if isSaving {
@@ -116,6 +125,7 @@ struct AddSheet: View {
         .presentationDragIndicator(.visible)
         .sensoryFeedback(.error, trigger: error) { _, new in new != nil }
         .onAppear { focus = .amount }
+        .sheet(isPresented: $showingApplePaySetup) { ApplePaySetupView() }
     }
 
     private var amount: Decimal? {

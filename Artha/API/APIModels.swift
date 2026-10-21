@@ -65,6 +65,8 @@ nonisolated struct APITransaction: Decodable, Sendable, Identifiable, Equatable 
     let date: String?
     let isRecurring: Bool
     let recurrenceInterval: String?
+    /// "manual", "csv" (statement import), "apple_pay", or nil (older rows).
+    let source: String?
     /// Only when `currency` isn't the person's display currency: the same
     /// amount converted, shown beside the real one, never instead of it.
     let displayAmount: String?

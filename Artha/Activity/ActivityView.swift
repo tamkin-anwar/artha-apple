@@ -153,9 +153,10 @@ struct ActivityView: View {
     /// The line under a transaction's name: its category, and how often it
     /// repeats if it does. The date is already the section it sits in.
     static func detail(for tx: APITransaction) -> String {
-        let kind = tx.type == "income" ? "Income" : tx.categoryLabel
-        guard tx.isRecurring else { return kind }
-        return "\(kind) · \(repeatLabel(tx.recurrenceInterval))"
+        var parts = [tx.type == "income" ? "Income" : tx.categoryLabel]
+        if tx.isRecurring { parts.append(repeatLabel(tx.recurrenceInterval)) }
+        if tx.source == "apple_pay" { parts.append("Apple Pay") }
+        return parts.joined(separator: " · ")
     }
 
     static func repeatLabel(_ interval: String?) -> String {

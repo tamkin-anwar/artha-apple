@@ -105,6 +105,9 @@ private struct TodayHeader: View {
             }
             Spacer()
             Menu {
+                Button("Log Apple Pay automatically", systemImage: "wave.3.right") {
+                    session.isShowingApplePaySetup = true
+                }
                 if let user = session.user {
                     Section("Signed in as \(user.username)") {
                         Button("Sign out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
