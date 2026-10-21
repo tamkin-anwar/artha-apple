@@ -7,10 +7,15 @@ import Foundation
 /// in Artha, categorized the same way as one added by hand. Works in any
 /// country with Apple Pay, unlike FinanceKit (US and UK only, and only
 /// with an entitlement Apple grants per app).
+///
+/// Its title, description and phrases never say "Apple": App Store Connect
+/// rejects any App Intent metadata containing the word (ITMS-90626, which
+/// failed build 1). The in-app guide can still say Apple Pay; that's
+/// ordinary interface text, not Siri metadata.
 struct LogPurchaseIntent: AppIntent {
-    static let title: LocalizedStringResource = "Log Apple Pay Purchase"
+    static let title: LocalizedStringResource = "Log Purchase"
     static let description = IntentDescription(
-        "Adds a purchase to Artha. Use it in a Wallet transaction automation and every Apple Pay tap logs itself.",
+        "Adds a purchase to Artha. Use it in a Wallet transaction automation in Shortcuts and every tap to pay logs itself.",
         categoryName: "Spending"
     )
     static let supportedModes: IntentModes = .background

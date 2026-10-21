@@ -13,7 +13,7 @@ struct ApplePaySetupView: View {
         ("Choose Transaction",
          "Pick the cards to include, then choose Run Immediately so it never asks first."),
         ("Add Artha's action",
-         "Start a new blank automation, search for Artha, and add Log Apple Pay Purchase."),
+         "Start a new blank automation, search for Artha, and add Log Purchase."),
         ("Fill in Amount and Merchant",
          "Tap Amount and choose Shortcut Input, then Amount. Do the same for Merchant."),
         ("Tap Done",
