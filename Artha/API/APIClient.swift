@@ -86,6 +86,10 @@ final class APIClient {
         _ = try await send(path, method: "DELETE")
     }
 
+    func delete<T: Decodable>(_ path: String, body: [String: Any]) async throws -> T {
+        try decoder.decode(T.self, from: try await send(path, method: "DELETE", body: body))
+    }
+
     private func send(_ path: String, method: String, body: [String: Any]? = nil) async throws -> Data {
         // `path` may carry its own query string ("transactions?q=coffee"),
         // which appending(path:) would percent-encode into the path itself.

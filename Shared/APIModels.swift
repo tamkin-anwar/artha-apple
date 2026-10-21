@@ -28,6 +28,10 @@ nonisolated struct SessionResponse: Decodable, Sendable {
     let user: APIUser
 }
 
+nonisolated struct DeletionResponse: Decodable, Sendable {
+    let purgeDate: String
+}
+
 nonisolated struct UserEnvelope: Decodable, Sendable {
     let user: APIUser
 }

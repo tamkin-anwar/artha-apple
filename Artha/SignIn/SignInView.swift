@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Sign in with an existing Artha account. Accounts are created on the web
-/// for now. An account with two-factor sign-in gets a code step after the
-/// password, the same order as the web login.
+/// Sign in with an existing Artha account, or start a new one (SignUpView).
+/// An account with two-factor sign-in gets a code step after the password,
+/// the same order as the web login.
 struct SignInView: View {
     @Environment(AppSession.self) private var session
 
@@ -14,6 +14,7 @@ struct SignInView: View {
     @State private var needsCode = false
     @State private var isWorking = false
     @State private var error: String?
+    @State private var isSigningUp = false
     @FocusState private var focus: Field?
 
     var body: some View {
@@ -103,10 +104,16 @@ struct SignInView: View {
                     .frame(minHeight: 44)
                     .padding(.top, 8)
                 } else {
-                    Text("New to Artha? Create an account at arthaapp.com.")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Palette.secondary)
-                        .padding(.top, 18)
+                    HStack(spacing: 4) {
+                        Text("New to Artha?")
+                            .foregroundStyle(Palette.secondary)
+                        Button("Create an account") { isSigningUp = true }
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Palette.accent)
+                    }
+                    .font(.system(size: 15))
+                    .frame(minHeight: 44)
+                    .padding(.top, 8)
                 }
             }
             .padding(.horizontal, 24)
@@ -116,7 +123,18 @@ struct SignInView: View {
         .scrollDismissesKeyboard(.interactively)
         .background(Palette.ground)
         .sensoryFeedback(.error, trigger: error) { _, new in new != nil }
-        .onAppear { focus = .username }
+        .sheet(isPresented: $isSigningUp) { SignUpView() }
+        .alert("Artha", isPresented: noticeShown) {
+            Button("OK") { session.notice = nil }
+        } message: {
+            Text(session.notice ?? "")
+        }
+    }
+
+    /// A deletion that just started explains itself here, since deleting
+    /// signs this iPhone out.
+    private var noticeShown: Binding<Bool> {
+        Binding(get: { session.notice != nil }, set: { if !$0 { session.notice = nil } })
     }
 
     private var canSubmit: Bool {
@@ -147,7 +165,8 @@ struct SignInView: View {
     }
 }
 
-private extension View {
+extension View {
+    /// A row in the grouped field cards on Sign In and Sign Up.
     func fieldStyle() -> some View {
         font(.system(size: 17))
             .foregroundStyle(Palette.ink)

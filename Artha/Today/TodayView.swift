@@ -88,6 +88,7 @@ struct TodayView: View {
 private struct TodayHeader: View {
     @Environment(AppSession.self) private var session
     @Environment(MonthModel.self) private var month
+    @State private var isDeletingAccount = false
 
     var body: some View {
         HStack {
@@ -110,8 +111,11 @@ private struct TodayHeader: View {
                 }
                 if let user = session.user {
                     Section("Signed in as \(user.username)") {
-                        Button("Sign out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
+                        Button("Sign out", systemImage: "rectangle.portrait.and.arrow.right") {
                             Task { await session.signOut() }
+                        }
+                        Button("Delete account", systemImage: "trash", role: .destructive) {
+                            isDeletingAccount = true
                         }
                     }
                 }
@@ -126,6 +130,7 @@ private struct TodayHeader: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
+        .sheet(isPresented: $isDeletingAccount) { DeleteAccountView() }
     }
 }
 

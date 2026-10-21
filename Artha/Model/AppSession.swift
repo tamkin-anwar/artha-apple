@@ -24,7 +24,8 @@ final class AppSession {
     /// Shown on Today when the latest refresh failed; the last good data
     /// stays on screen underneath it.
     private(set) var refreshError: String?
-    /// One-time note after a sign-in that canceled a pending deletion.
+    /// One-time note: a sign-in that canceled a pending deletion (shown on
+    /// Today), or a deletion that just started (shown on Sign In).
     var notice: String?
     /// Opens the monthly budget editor from anywhere (Today's cards, Plan).
     var isEditingBudget = false
@@ -74,12 +75,35 @@ final class AppSession {
         var body: [String: Any] = ["username": username, "password": password, "device_name": deviceName]
         if let code, !code.isEmpty { body["code"] = code }
         let response: SessionResponse = try await api.post("sessions", body: body)
-        Keychain.save(response.token, account: Keychain.tokenAccount)
-        api.token = response.token
-        user = response.user
         if response.deletionCanceled {
             notice = "Welcome back. Your account deletion has been canceled."
         }
+        await begin(response)
+    }
+
+    /// Creates an account and signs this iPhone in, in one step. The
+    /// phone's own timezone goes along so "today" starts out right.
+    func signUp(firstName: String, email: String, username: String, password: String, currency: String) async throws {
+        let body: [String: Any] = [
+            "first_name": firstName, "email": email, "username": username, "password": password,
+            "currency": currency, "timezone": TimeZone.current.identifier, "device_name": deviceName,
+        ]
+        let response: SessionResponse = try await api.post("users", body: body)
+        await begin(response)
+    }
+
+    /// Starts the 30-day deletion window (signing back in cancels it). The
+    /// server signs every device out, so this one forgets everything too.
+    func deleteAccount(password: String) async throws {
+        let response: DeletionResponse = try await api.delete("me", body: ["password": password])
+        signOutLocally()
+        notice = "Your account will be deleted on \(response.purgeDate). Sign in before then if you change your mind."
+    }
+
+    private func begin(_ response: SessionResponse) async {
+        Keychain.save(response.token, account: Keychain.tokenAccount)
+        api.token = response.token
+        user = response.user
         phase = .signedIn
         await refresh()
         prefetch()
