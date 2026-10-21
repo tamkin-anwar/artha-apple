@@ -37,6 +37,22 @@ struct NoBudgetCard: View {
     }
 }
 
+/// Purchases that logged themselves (Apple Pay) and haven't been looked
+/// at. Optional by design: it never badges or nags, it just waits here.
+struct ReviewCard: View {
+    @Environment(AppSession.self) private var session
+    @Environment(MonthModel.self) private var month
+
+    var body: some View {
+        let count = month.toReview
+        StateCard(symbol: "checkmark.circle",
+                  title: count == 1 ? "1 purchase to review" : "\(count) purchases to review",
+                  detail: "Logged on their own with Apple Pay. A quick look keeps names and categories right.",
+                  tint: Palette.accent,
+                  action: "Review") { session.isReviewing = true }
+    }
+}
+
 private struct StateCard: View {
     let symbol: String
     let title: String

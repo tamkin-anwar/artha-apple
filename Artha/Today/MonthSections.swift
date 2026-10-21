@@ -34,23 +34,29 @@ struct WhereItWent: View {
             .accessibilityElement()
             .accessibilityLabel(shares.map { "\($0.name) \(Money.whole($0.amount, month.currencyCode))" }.joined(separator: ", "))
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)],
-                      alignment: .leading, spacing: 11) {
+                      alignment: .leading, spacing: 1) {
                 ForEach(Array(shares.enumerated()), id: \.element.id) { index, share in
-                    HStack(spacing: 8) {
-                        Swatch(opacity: opacities[min(index, opacities.count - 1)],
-                               outlined: index == opacities.count - 1, radius: 3)
-                            .frame(width: 10, height: 10)
-                        Text(share.name)
-                            .font(.system(size: 15))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                        Spacer(minLength: 4)
-                        Text(Money.whole(share.amount, month.currencyCode))
-                            .font(.figure(16))
-                            .monospacedDigit()
-                            .contentTransition(.numericText())
+                    NavigationLink(value: TodayRoute.category(.init(name: share.name, keys: share.keys))) {
+                        HStack(spacing: 8) {
+                            Swatch(opacity: opacities[min(index, opacities.count - 1)],
+                                   outlined: index == opacities.count - 1, radius: 3)
+                                .frame(width: 10, height: 10)
+                            Text(share.name)
+                                .font(.system(size: 15))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Spacer(minLength: 4)
+                            Text(Money.whole(share.amount, month.currencyCode))
+                                .font(.figure(16))
+                                .monospacedDigit()
+                                .contentTransition(.numericText())
+                        }
+                        .frame(minHeight: 30)
+                        .contentShape(Rectangle())
+                        .accessibilityElement(children: .combine)
+                        .accessibilityHint("Shows these transactions")
                     }
-                    .accessibilityElement(children: .combine)
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -145,8 +151,11 @@ struct RecentList: View {
             SectionLabel("Recent")
                 .frame(minHeight: 44)
             ForEach(Array(month.recent.enumerated()), id: \.element.id) { index, expense in
-                TransactionRow(expense: expense, displayCurrency: month.currencyCode)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                NavigationLink(value: TodayRoute.transaction(expense.id, fallback: nil)) {
+                    TransactionRow(expense: expense, displayCurrency: month.currencyCode)
+                }
+                .buttonStyle(.plain)
+                .transition(.move(edge: .top).combined(with: .opacity))
                 if index < month.recent.count - 1 {
                     Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
                 }

@@ -27,6 +27,9 @@ final class ActivityModel {
         let title: String
         let isUpcoming: Bool
         let transactions: [APITransaction]
+        /// What went out that day, in the display currency (a foreign
+        /// purchase counts at its converted amount).
+        let spent: Decimal
     }
 
     /// How long a swiped-away transaction waits before it's really deleted,
@@ -46,6 +49,9 @@ final class ActivityModel {
     private(set) var error: String?
     private(set) var categories: [CategoryList.Category] = []
     private(set) var pendingDelete: APITransaction? { didSet { rebuildDays() } }
+    /// Deletes already sent, so a list loaded elsewhere (a Today category)
+    /// can leave them out without racing the server.
+    private(set) var deletedIDs: Set<Int> = []
     /// Bumps on every delete so the list can play one haptic.
     private(set) var deleteCount = 0
 
@@ -95,7 +101,9 @@ final class ActivityModel {
             return Day(id: group.key,
                        title: Self.title(for: date, today: today),
                        isUpcoming: date.map { $0 > today } ?? false,
-                       transactions: group.items)
+                       transactions: group.items,
+                       spent: group.items.filter { $0.type == "expense" }
+                           .reduce(Decimal(0)) { $0 + Decimal.api($1.displayAmount ?? $1.amount) })
         }
     }
 
@@ -218,6 +226,7 @@ final class ActivityModel {
         pendingDeleteTask?.cancel()
         pendingDeleteTask = nil
         pendingDelete = nil
+        deletedIDs.insert(tx.id)
         transactions.removeAll { $0.id == tx.id }
         Task {
             do {
@@ -226,9 +235,11 @@ final class ActivityModel {
             } catch APIError.rejected(code: "not_found", _) {
                 // Already gone (deleted on the web meanwhile): nothing to put back.
             } catch let failure as APIError {
+                deletedIDs.remove(tx.id)
                 error = failure.message
                 await reload()
             } catch {
+                deletedIDs.remove(tx.id)
                 await reload()
             }
         }
@@ -238,6 +249,7 @@ final class ActivityModel {
 
     func clear() {
         undoDelete()
+        deletedIDs = []
         transactions = []
         categories = []
         nextOffset = nil

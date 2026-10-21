@@ -31,6 +31,8 @@ final class AppSession {
     var isEditingBudget = false
     /// Opens the Apple Pay automation guide from anywhere.
     var isShowingApplePaySetup = false
+    /// Opens the review of purchases that logged themselves.
+    var isReviewing = false
     /// Where a widget tap or artha:// link asked to go; MainTabs consumes it.
     var route: AppRoute?
 
@@ -166,6 +168,37 @@ final class AppSession {
         await refreshAfterChange(reloadActivity: true)
     }
 
+    /// This month's transactions in the given categories ("none" for
+    /// uncategorized), for the transactions behind a Today number.
+    func monthTransactions(categories: [String]) async throws -> TransactionPage {
+        var components = URLComponents()
+        components.path = "transactions"
+        components.queryItems = [
+            URLQueryItem(name: "limit", value: "200"),
+            URLQueryItem(name: "type", value: "expense"),
+            URLQueryItem(name: "month", value: String((month.summary?.date ?? "").prefix(7))),
+            URLQueryItem(name: "category", value: categories.joined(separator: ",")),
+        ]
+        return try await api.get(components.string ?? "transactions")
+    }
+
+    /// Purchases that logged themselves and are waiting for a look,
+    /// newest first.
+    func reviewQueue() async throws -> TransactionPage {
+        try await api.get("transactions?review=1&limit=200")
+    }
+
+    /// These look right as they are.
+    func markReviewed(_ ids: [Int]) async throws {
+        let _: ReviewedResponse = try await api.post("transactions/reviewed", body: ["ids": ids])
+    }
+
+    /// Closing the review: the count on Today, and the list in Activity,
+    /// catch up with what was confirmed.
+    func refreshAfterReview() async {
+        await refreshAfterChange(reloadActivity: true)
+    }
+
     /// After anything that changes this month's money: Today, Plan and (if
     /// asked) Activity reload side by side.
     private func refreshAfterChange(reloadActivity: Bool) async {
@@ -231,6 +264,7 @@ final class AppSession {
         refreshError = nil
         isEditingBudget = false
         isShowingApplePaySetup = false
+        isReviewing = false
         phase = .signedOut
     }
 

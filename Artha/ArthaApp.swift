@@ -92,6 +92,11 @@ struct MainTabs: View {
         .sheet(isPresented: $session.isShowingApplePaySetup) {
             ApplePaySetupView()
         }
+        .sheet(isPresented: $session.isReviewing, onDismiss: {
+            Task { await session.refreshAfterReview() }
+        }) {
+            ReviewSheet()
+        }
         .onChange(of: session.route, initial: true) { _, route in
             guard let route else { return }
             session.route = nil

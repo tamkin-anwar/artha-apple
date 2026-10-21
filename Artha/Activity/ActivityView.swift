@@ -90,8 +90,16 @@ struct ActivityView: View {
                                 .background(Palette.raised, in: Capsule())
                                 .foregroundStyle(Palette.secondary)
                         }
+                        Spacer(minLength: 8)
+                        if day.spent > 0 {
+                            Text(Money.cents(day.spent, activity.currencyCode))
+                                .font(.system(size: 13, weight: .semibold))
+                                .monospacedDigit()
+                                .foregroundStyle(Palette.secondary)
+                                .accessibilityLabel("\(Money.cents(day.spent, activity.currencyCode)) spent")
+                        }
                     }
-                    .padding(.leading, 4)
+                    .padding(.horizontal, 4)
                 }
             }
             if activity.canLoadMore {
@@ -169,8 +177,9 @@ struct ActivityView: View {
 }
 
 /// "Deleted Blue Bottle Coffee · Undo", floating above the tab bar for as
-/// long as the delete is being held back.
-private struct UndoToast: View {
+/// long as the delete is being held back. On Today too, since a
+/// transaction can be opened and deleted from there.
+struct UndoToast: View {
     @Environment(AppSession.self) private var session
 
     var body: some View {

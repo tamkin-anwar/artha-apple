@@ -58,7 +58,7 @@ nonisolated struct CategoryList: Decodable, Sendable {
     let categories: [Category]
 }
 
-nonisolated struct APITransaction: Decodable, Sendable, Identifiable, Equatable {
+nonisolated struct APITransaction: Decodable, Sendable, Identifiable, Hashable {
     let id: Int
     let description: String
     let amount: String
@@ -74,6 +74,9 @@ nonisolated struct APITransaction: Decodable, Sendable, Identifiable, Equatable 
     /// Only when `currency` isn't the person's display currency: the same
     /// amount converted, shown beside the real one, never instead of it.
     let displayAmount: String?
+    /// Logged on its own (Apple Pay) and not looked at yet. Optional so a
+    /// response cached before this field existed still decodes.
+    let needsReview: Bool?
 }
 
 nonisolated struct PlanSummary: Decodable, Sendable {
@@ -241,6 +244,12 @@ nonisolated struct TodaySummary: Decodable, Sendable {
     let comingUp: [Bill]
     let recent: [APITransaction]
     let netWorth: NetWorth?
+    /// Purchases that logged themselves and haven't been looked at yet.
+    let toReview: Int?
+}
+
+nonisolated struct ReviewedResponse: Decodable, Sendable {
+    let toReview: Int
 }
 
 extension Decimal {

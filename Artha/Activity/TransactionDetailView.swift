@@ -5,6 +5,9 @@ import SwiftUI
 /// remembered for that merchant, and the amount stays in its own currency.
 struct TransactionDetailView: View {
     let transactionID: Int
+    /// For one opened from outside Activity's loaded pages (an older
+    /// transaction behind a Today category).
+    var fallback: APITransaction?
 
     @Environment(AppSession.self) private var session
     @Environment(\.dismiss) private var dismiss
@@ -179,7 +182,7 @@ struct TransactionDetailView: View {
     }
 
     private func load() {
-        guard original == nil, let tx = session.activity.transaction(id: transactionID) else { return }
+        guard original == nil, let tx = session.activity.transaction(id: transactionID) ?? fallback else { return }
         original = tx
         description = tx.description
         amountText = tx.amount

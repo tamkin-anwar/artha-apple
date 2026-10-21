@@ -72,6 +72,9 @@ final class MonthModel {
     struct Share: Identifiable {
         let id: String
         let amount: Decimal
+        /// The category keys behind it, for listing its transactions
+        /// ("none" for uncategorized; several for "Everything else").
+        let keys: [String]
         var name: String { id }
     }
 
@@ -115,6 +118,8 @@ final class MonthModel {
 
     var currencyCode: String { summary?.currency ?? "USD" }
     var hasBudget: Bool { summary?.safeToSpend != nil }
+    /// Purchases that logged themselves and are waiting for a look.
+    var toReview: Int { summary?.toReview ?? 0 }
     var today: Int { summary?.month.day ?? 1 }
     var daysInMonth: Int { summary?.month.daysInMonth ?? 30 }
     var daysLeft: Int { summary?.month.daysLeft ?? 1 }
@@ -195,13 +200,16 @@ final class MonthModel {
 
     /// The top three categories by spending, plus everything else.
     private func makeShares() -> [Share] {
-        let categories = (summary?.categories ?? []).map { (label: $0.label, amount: Decimal.api($0.amount)) }
-        guard categories.count > 4 else {
-            return categories.map { Share(id: $0.label, amount: $0.amount) }
+        let categories = (summary?.categories ?? []).map {
+            (label: $0.label, amount: Decimal.api($0.amount), key: $0.key ?? "none")
         }
-        let top = categories.prefix(3).map { Share(id: $0.label, amount: $0.amount) }
-        let rest = categories.dropFirst(3).reduce(Decimal(0)) { $0 + $1.amount }
-        return top + [Share(id: "Everything else", amount: rest)]
+        guard categories.count > 4 else {
+            return categories.map { Share(id: $0.label, amount: $0.amount, keys: [$0.key]) }
+        }
+        let top = categories.prefix(3).map { Share(id: $0.label, amount: $0.amount, keys: [$0.key]) }
+        let rest = categories.dropFirst(3)
+        return top + [Share(id: "Everything else", amount: rest.reduce(Decimal(0)) { $0 + $1.amount },
+                            keys: rest.map(\.key))]
     }
 
     private func makeBills() -> [Bill] {

@@ -2,11 +2,45 @@ import SwiftUI
 
 /// Today: one number that answers "am I OK?", the month drawn under it,
 /// then where the money went, what's coming, and what just happened.
+/// Where a tap on Today leads: a transaction, or the transactions behind
+/// one of "Where October went"'s numbers.
+enum TodayRoute: Hashable {
+    struct Category: Hashable {
+        let name: String
+        let keys: [String]
+    }
+
+    case transaction(Int, fallback: APITransaction?)
+    case category(Category)
+}
+
 struct TodayView: View {
     @Environment(AppSession.self) private var session
     @Environment(MonthModel.self) private var month
+    @State private var path: [TodayRoute] = []
 
     var body: some View {
+        NavigationStack(path: $path) {
+            page
+                .toolbar(.hidden, for: .navigationBar)
+                .navigationDestination(for: TodayRoute.self) { route in
+                    switch route {
+                    case .transaction(let id, let fallback):
+                        TransactionDetailView(transactionID: id, fallback: fallback)
+                    case .category(let category):
+                        CategoryMonthView(route: category)
+                    }
+                }
+        }
+        // An overlay, not a safe-area inset: an inset here changes the
+        // stack's layout as the toast comes and goes, and with the
+        // navigation bar hidden that fed back into an endless layout loop.
+        .overlay(alignment: .bottom) {
+            UndoToast()
+        }
+    }
+
+    private var page: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 TodayHeader()
@@ -59,6 +93,9 @@ struct TodayView: View {
             PaceChart()
                 .padding(.horizontal, 16)
                 .padding(.top, 22)
+            if month.toReview > 0 {
+                ReviewCard().padding(.horizontal, 16).padding(.top, 24)
+            }
             if !month.hasBudget {
                 NoBudgetCard().padding(.horizontal, 16).padding(.top, 24)
             } else if month.status == .ahead {
