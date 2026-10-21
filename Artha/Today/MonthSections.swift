@@ -145,7 +145,7 @@ struct RecentList: View {
             SectionLabel("Recent")
                 .frame(minHeight: 44)
             ForEach(Array(month.recent.enumerated()), id: \.element.id) { index, expense in
-                ExpenseRow(expense: expense, displayCurrency: month.currencyCode)
+                TransactionRow(expense: expense, displayCurrency: month.currencyCode)
                     .transition(.move(edge: .top).combined(with: .opacity))
                 if index < month.recent.count - 1 {
                     Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
@@ -153,43 +153,5 @@ struct RecentList: View {
             }
         }
         .animation(.snappy(duration: 0.4), value: month.recent.map(\.id))
-    }
-}
-
-private struct ExpenseRow: View {
-    let expense: MonthModel.Expense
-    let displayCurrency: String
-
-    var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: expense.symbol)
-                .font(.system(size: 17, weight: .medium))
-                .frame(width: 40, height: 40)
-                .background(Palette.raised, in: .rect(cornerRadius: 12))
-                .foregroundStyle(Palette.ink)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(expense.merchant)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
-                Text(expense.detail)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Palette.secondary)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(Money.cents(expense.amount, expense.currencyCode))
-                    .font(.figure(17, weight: .bold))
-                    .monospacedDigit()
-                    .foregroundStyle(Palette.ink)
-                if let equivalent = expense.displayEquivalent {
-                    Text("≈ \(Money.cents(equivalent, displayCurrency))")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Palette.secondary)
-                }
-            }
-        }
-        .padding(.vertical, 11)
-        .accessibilityElement(children: .combine)
     }
 }

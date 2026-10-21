@@ -50,12 +50,19 @@ final class APIClient {
         try decoder.decode(T.self, from: try await send(path, method: "POST", body: body))
     }
 
+    func patch<T: Decodable>(_ path: String, body: [String: Any]) async throws -> T {
+        try decoder.decode(T.self, from: try await send(path, method: "PATCH", body: body))
+    }
+
     func delete(_ path: String) async throws {
         _ = try await send(path, method: "DELETE")
     }
 
     private func send(_ path: String, method: String, body: [String: Any]? = nil) async throws -> Data {
-        var request = URLRequest(url: Self.baseURL.appending(path: path))
+        // `path` may carry its own query string ("transactions?q=coffee"),
+        // which appending(path:) would percent-encode into the path itself.
+        guard let url = URL(string: path, relativeTo: Self.baseURL) else { throw APIError.offline }
+        var request = URLRequest(url: url)
         request.httpMethod = method
         request.timeoutInterval = 20
         request.setValue("application/json", forHTTPHeaderField: "Accept")

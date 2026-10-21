@@ -36,7 +36,25 @@ nonisolated struct TransactionEnvelope: Decodable, Sendable {
     let transaction: APITransaction
 }
 
-nonisolated struct APITransaction: Decodable, Sendable, Identifiable {
+nonisolated struct TransactionPage: Decodable, Sendable {
+    let currency: String
+    /// The person's own date on the server ("2026-10-20").
+    let today: String
+    let transactions: [APITransaction]
+    let nextOffset: Int?
+}
+
+nonisolated struct CategoryList: Decodable, Sendable {
+    nonisolated struct Category: Decodable, Sendable, Identifiable, Hashable {
+        let key: String
+        let label: String
+        var id: String { key }
+    }
+
+    let categories: [Category]
+}
+
+nonisolated struct APITransaction: Decodable, Sendable, Identifiable, Equatable {
     let id: Int
     let description: String
     let amount: String

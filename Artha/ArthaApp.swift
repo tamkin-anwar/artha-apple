@@ -54,7 +54,7 @@ struct MainTabs: View {
                 TodayView()
             }
             Tab("Activity", systemImage: "list.bullet", value: .activity) {
-                ComingNext(title: "Activity", symbol: "list.bullet")
+                ActivityView()
             }
             Tab("Plan", systemImage: "chart.line.uptrend.xyaxis", value: .plan) {
                 ComingNext(title: "Plan", symbol: "chart.line.uptrend.xyaxis")

@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 /// Whether this device is signed in, who to, and the calls that change
-/// that. Owns the API client and the month Today shows.
+/// that. Owns the API client, the month Today shows, and Activity's list.
 @Observable
 final class AppSession {
     enum Phase { case checking, signedOut, signedIn }
@@ -17,7 +17,16 @@ final class AppSession {
     var notice: String?
 
     let month = MonthModel()
-    private let api = APIClient()
+    let activity: ActivityModel
+    private let api: APIClient
+
+    init() {
+        let api = APIClient()
+        self.api = api
+        activity = ActivityModel(api: api)
+        // An edit or delete in Activity changes this month's numbers too.
+        activity.onChange = { [weak self] in await self?.refresh() }
+    }
 
     func start() async {
         guard phase == .checking else { return }
@@ -82,6 +91,7 @@ final class AppSession {
         let _: TransactionEnvelope = try await api.post("transactions", body: body)
         month.noteAdded()
         await refresh()
+        if activity.hasLoaded { await activity.reload() }
     }
 
     private func signOutLocally() {
@@ -89,6 +99,7 @@ final class AppSession {
         api.token = nil
         user = nil
         month.clear()
+        activity.clear()
         refreshError = nil
         phase = .signedOut
     }

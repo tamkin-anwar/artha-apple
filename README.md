@@ -11,7 +11,7 @@ By Anwar Creative Studio. The web app lives at <a href="https://arthaapp.com">ar
 
 ## Status
 
-Early build. Signs in to a real Artha account and shows Today from the Artha server: Safe to Spend, the month's pace chart, where the money went, bills coming up and recent transactions. Add saves a real expense or income. Activity, Plan and Wealth come next. Accounts are created on the web for now.
+Early build. Signs in to a real Artha account and shows Today from the Artha server: Safe to Spend, the month's pace chart, where the money went, bills coming up and recent transactions. Add saves a real expense or income. Activity lists every transaction by day, with search, an Expenses/Income filter, swipe to delete with Undo, and tap to edit. Plan and Wealth come next. Accounts are created on the web for now.
 
 ## What to try
 

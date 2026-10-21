@@ -35,6 +35,32 @@ final class MonthModel {
         /// Only for a transaction in another currency: its equivalent in
         /// the display currency, shown beside the real amount.
         let displayEquivalent: Decimal?
+        let isIncome: Bool
+
+        init(id: Int, merchant: String, detail: String, symbol: String, amount: Decimal,
+             currencyCode: String, displayEquivalent: Decimal?, isIncome: Bool = false) {
+            self.id = id
+            self.merchant = merchant
+            self.detail = detail
+            self.symbol = symbol
+            self.amount = amount
+            self.currencyCode = currencyCode
+            self.displayEquivalent = displayEquivalent
+            self.isIncome = isIncome
+        }
+
+        /// A transaction from the API as a row; `detail` is the line under
+        /// its name.
+        init(_ tx: APITransaction, detail: String) {
+            self.init(id: tx.id,
+                      merchant: tx.description,
+                      detail: detail,
+                      symbol: CategoryStyle.symbol(for: tx.category, type: tx.type),
+                      amount: Decimal.api(tx.amount),
+                      currencyCode: tx.currency,
+                      displayEquivalent: tx.displayAmount.map { Decimal.api($0) },
+                      isIncome: tx.type == "income")
+        }
     }
 
     struct DayPoint: Identifiable {
@@ -191,15 +217,7 @@ final class MonthModel {
         guard let summary else { return [] }
         let today = Date.apiDay(summary.date)
         return summary.recent.map { tx in
-            Expense(
-                id: tx.id,
-                merchant: tx.description,
-                detail: "\(tx.type == "income" ? "Income" : tx.categoryLabel) · \(Self.relativeDay(tx.date, today: today))",
-                symbol: Self.symbol(for: tx.category, type: tx.type),
-                amount: Decimal.api(tx.amount),
-                currencyCode: tx.currency,
-                displayEquivalent: tx.displayAmount.map { Decimal.api($0) }
-            )
+            Expense(tx, detail: "\(tx.type == "income" ? "Income" : tx.categoryLabel) · \(Self.relativeDay(tx.date, today: today))")
         }
     }
 
@@ -213,22 +231,5 @@ final class MonthModel {
             return date.formatted(.dateTime.weekday(.wide))
         }
         return date.formatted(.dateTime.month(.abbreviated).day())
-    }
-
-    private static func symbol(for category: String?, type: String) -> String {
-        if type == "income" { return "arrow.down.left" }
-        switch category {
-        case "groceries": return "cart"
-        case "dining": return "fork.knife"
-        case "transport": return "car"
-        case "housing": return "house"
-        case "utilities": return "bolt"
-        case "subscriptions": return "repeat"
-        case "shopping": return "bag"
-        case "health": return "heart"
-        case "entertainment": return "film"
-        case "debt": return "creditcard"
-        default: return "circle.grid.2x2"
-        }
     }
 }
