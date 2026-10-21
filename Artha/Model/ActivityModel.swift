@@ -33,16 +33,19 @@ final class ActivityModel {
     /// which is how long Undo stays on screen.
     static let undoWindow: Duration = .seconds(5)
 
-    private(set) var transactions: [APITransaction] = []
+    private(set) var transactions: [APITransaction] = [] { didSet { rebuildDays() } }
     private(set) var currencyCode = "USD"
     /// The person's own date, from the server rather than the phone's
     /// clock, which can sit in another timezone.
-    private(set) var today = Calendar.current.startOfDay(for: .now)
+    private(set) var today = Calendar.current.startOfDay(for: .now) { didSet { rebuildDays() } }
+    /// Grouped once whenever the list changes, not on every redraw.
+    private(set) var days: [Day] = []
     private(set) var hasLoaded = false
+    private(set) var lastLoaded: Date?
     private(set) var isLoading = false
     private(set) var error: String?
     private(set) var categories: [CategoryList.Category] = []
-    private(set) var pendingDelete: APITransaction?
+    private(set) var pendingDelete: APITransaction? { didSet { rebuildDays() } }
     /// Bumps on every delete so the list can play one haptic.
     private(set) var deleteCount = 0
 
@@ -53,6 +56,11 @@ final class ActivityModel {
 
     private let api: APIClient
     private var nextOffset: Int?
+    /// Which search and filter the list on screen was loaded for.
+    private var shownKey = ""
+    private var currentKey: String {
+        "\(query.trimmingCharacters(in: .whitespaces))|\(filter.rawValue)"
+    }
     private var pendingDeleteTask: Task<Void, Never>?
     private var loadGeneration = 0
 
@@ -63,10 +71,16 @@ final class ActivityModel {
     var isFiltered: Bool { filter != .all || !query.trimmingCharacters(in: .whitespaces).isEmpty }
     var canLoadMore: Bool { nextOffset != nil }
 
+    /// Whether the plain, unfiltered list was loaded recently enough that
+    /// opening the tab doesn't need to fetch it again.
+    var isFresh: Bool {
+        guard let lastLoaded, !isFiltered, shownKey == currentKey else { return false }
+        return Date.now.timeIntervalSince(lastLoaded) < AppSession.freshFor
+    }
+
     /// Grouped by day, newest first. A recurring bill is posted ahead for
     /// later this month, so days after today are marked as upcoming.
-    var days: [Day] {
-        let today = today
+    private func rebuildDays() {
         var groups: [(key: String, items: [APITransaction])] = []
         for tx in transactions where tx.id != pendingDelete?.id {
             let key = tx.date ?? ""
@@ -76,7 +90,7 @@ final class ActivityModel {
                 groups.append((key, [tx]))
             }
         }
-        return groups.map { group in
+        days = groups.map { group in
             let date = Date.apiDay(group.key)
             return Day(id: group.key,
                        title: Self.title(for: date, today: today),
@@ -96,17 +110,19 @@ final class ActivityModel {
     func reload() async {
         loadGeneration += 1
         let generation = loadGeneration
+        let key = currentKey
         isLoading = true
         defer { if generation == loadGeneration { isLoading = false } }
         do {
-            let page: TransactionPage = try await api.get(path(offset: 0))
+            let (page, data): (TransactionPage, Data) = try await api.fetch(path(offset: 0))
             guard generation == loadGeneration else { return }
-            transactions = page.transactions
-            currencyCode = page.currency
-            today = Date.apiDay(page.today) ?? today
-            nextOffset = page.nextOffset
-            hasLoaded = true
+            apply(page)
+            shownKey = key
             error = nil
+            if !isFiltered {
+                lastLoaded = .now
+                ResponseCache.save(data, as: .activity)
+            }
         } catch let failure as APIError {
             guard generation == loadGeneration else { return }
             error = failure.message
@@ -118,6 +134,21 @@ final class ActivityModel {
             let list: CategoryList? = try? await api.get("categories")
             categories = list?.categories ?? []
         }
+    }
+
+    /// Shows the last list this device saw while the fresh one loads.
+    func restore(from data: Data) {
+        guard !hasLoaded, let page = api.decode(TransactionPage.self, from: data) else { return }
+        apply(page)
+        shownKey = "|\(Filter.all.rawValue)"
+    }
+
+    private func apply(_ page: TransactionPage) {
+        currencyCode = page.currency
+        today = Date.apiDay(page.today) ?? today
+        transactions = page.transactions
+        nextOffset = page.nextOffset
+        hasLoaded = true
     }
 
     func loadMore() async {
@@ -211,6 +242,7 @@ final class ActivityModel {
         categories = []
         nextOffset = nil
         hasLoaded = false
+        lastLoaded = nil
         error = nil
         query = ""
         filter = .all

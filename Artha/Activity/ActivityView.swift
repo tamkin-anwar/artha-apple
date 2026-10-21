@@ -40,6 +40,8 @@ struct ActivityView: View {
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }
             }
+            // Already loaded behind Today a moment ago: nothing to wait for.
+            if activity.isFresh { return }
             await activity.reload()
         }
         .onChange(of: scenePhase) { _, phase in

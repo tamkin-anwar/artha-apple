@@ -13,22 +13,27 @@ struct AheadCard: View {
 
 /// Over budget: say it plainly, and say when it resets.
 struct OverCard: View {
+    @Environment(AppSession.self) private var session
     @Environment(MonthModel.self) private var month
 
     var body: some View {
         StateCard(symbol: "exclamationmark",
                   title: "\(month.monthName) is over budget",
-                  detail: "Spending and the bills still due come to \(Money.whole(month.overBy, month.currencyCode)) more than the budget. \(month.nextMonthName)'s budget starts in \(month.daysLeft) \(month.daysLeft == 1 ? "day" : "days"). You can change this month's budget on arthaapp.com.")
+                  detail: "Spending and the bills still due come to \(Money.whole(month.overBy, month.currencyCode)) more than the budget. \(month.nextMonthName)'s budget starts in \(month.daysLeft) \(month.daysLeft == 1 ? "day" : "days").",
+                  action: "Change budget") { session.isEditingBudget = true }
     }
 }
 
 /// No budget yet, so there's nothing to be "safe" against.
 struct NoBudgetCard: View {
+    @Environment(AppSession.self) private var session
+
     var body: some View {
         StateCard(symbol: "target",
                   title: "Set a monthly budget",
-                  detail: "With a budget, Today shows what's safe to spend each day, after the bills still due. Set one on arthaapp.com, under Finance.",
-                  tint: Palette.accent)
+                  detail: "With a budget, Today shows what's safe to spend each day, after the bills still due.",
+                  tint: Palette.accent,
+                  action: "Set budget") { session.isEditingBudget = true }
     }
 }
 
@@ -37,6 +42,8 @@ private struct StateCard: View {
     let title: String
     let detail: String
     var tint: Color = Palette.caution
+    var action: String? = nil
+    var perform: () -> Void = {}
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -53,6 +60,12 @@ private struct StateCard: View {
                     .font(.system(size: 14))
                     .foregroundStyle(Palette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                if let action {
+                    Button(action, action: perform)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Palette.accent)
+                        .frame(minHeight: 36)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -64,6 +77,8 @@ private struct StateCard: View {
 
 /// A brand-new account: what to do first, then the month draws itself.
 struct FirstDay: View {
+    @Environment(AppSession.self) private var session
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Let's find your safe to spend")
@@ -76,7 +91,10 @@ struct FirstDay: View {
                 .padding(.top, 8)
 
             VStack(spacing: 0) {
-                StepRow(number: 1, title: "Set a monthly budget", detail: "On arthaapp.com, under Finance")
+                Button { session.isEditingBudget = true } label: {
+                    StepRow(number: 1, title: "Set a monthly budget", detail: "Tap here. Artha suggests one from your spending")
+                }
+                .buttonStyle(.plain)
                 Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
                 StepRow(number: 2, title: "Add your first expense", detail: "Tap + below. It takes a few seconds")
             }

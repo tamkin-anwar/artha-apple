@@ -4,7 +4,12 @@ import UIKit
 /// Artha's colors, from the orb: cool graphite-navy in Dark, crisp white in
 /// Light, orb blue for anything tappable, and color that changes only when
 /// a status does (green on pace, amber ahead or over; never red).
-enum Palette {
+///
+/// nonisolated: SwiftUI resolves these colors on its own render thread
+/// during some animations, so the light/dark lookup must be callable from
+/// any thread. Main-actor-only (this project's default) crashed the app the
+/// first time Plan animated a change.
+nonisolated enum Palette {
     static let ground = dynamic(light: 0xF4F6FA, dark: 0x0A0E17)
     static let surface = dynamic(light: 0xFFFFFF, dark: 0x121826)
     static let raised = dynamic(light: 0xE4E9F2, dark: 0x1A2233)
@@ -27,14 +32,14 @@ enum Palette {
     static let sun = Color(hex: 0xF5A524)
 
     private static func dynamic(light: UInt32, dark: UInt32) -> Color {
-        Color(UIColor { traits in
+        Color(UIColor { @Sendable traits in
             UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
         })
     }
 }
 
 extension UIColor {
-    convenience init(hex: UInt32) {
+    nonisolated convenience init(hex: UInt32) {
         self.init(red: CGFloat((hex >> 16) & 0xFF) / 255,
                   green: CGFloat((hex >> 8) & 0xFF) / 255,
                   blue: CGFloat(hex & 0xFF) / 255,
@@ -43,7 +48,7 @@ extension UIColor {
 }
 
 extension Color {
-    init(hex: UInt32) {
+    nonisolated init(hex: UInt32) {
         self.init(red: Double((hex >> 16) & 0xFF) / 255,
                   green: Double((hex >> 8) & 0xFF) / 255,
                   blue: Double(hex & 0xFF) / 255)
@@ -97,5 +102,28 @@ extension Decimal {
         var result = Decimal()
         NSDecimalRound(&result, &source, scale, mode)
         return result
+    }
+}
+
+extension Decimal {
+    /// What someone typed into an amount field ("1,250.5"), or nil when
+    /// it isn't a positive number.
+    static func entry(_ text: String) -> Decimal? {
+        let cleaned = text.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        guard let value = Decimal(string: cleaned, locale: Locale(identifier: "en_US_POSIX")), value > 0 else { return nil }
+        return value
+    }
+
+    /// Rounded up to a friendly step, for suggesting a budget from what
+    /// someone usually spends ($2,812 becomes $2,850 with a step of 50).
+    func roundedUp(toStep step: Decimal) -> Decimal {
+        guard step > 0 else { return self }
+        return (self / step).rounded(0, .up) * step
+    }
+
+    /// Plain digits for an editable field: "1650" or "11.99", no symbol or grouping.
+    var entryText: String {
+        let value = self == rounded(0) ? rounded(0) : rounded(2)
+        return NSDecimalNumber(decimal: value).stringValue
     }
 }

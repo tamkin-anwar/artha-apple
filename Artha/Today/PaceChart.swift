@@ -123,6 +123,9 @@ private struct ChartLabel: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .glassEffect(.regular, in: .rect(cornerRadius: 14))
+        // Solid, not glass: the chart's lines showed through glass and ran
+        // across the figures. Glass is for floating controls; this is a label.
+        .background(Palette.surface, in: .rect(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.ink.opacity(0.08), lineWidth: 1))
     }
 }

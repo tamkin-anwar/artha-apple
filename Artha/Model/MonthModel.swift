@@ -76,12 +76,24 @@ final class MonthModel {
     }
 
     private(set) var summary: TodaySummary?
+    // Built once per refresh, not on every redraw (the chart redraws on
+    // every frame of a drag, and these were all being rebuilt each time).
+    private(set) var cumulative: [DayPoint] = []
+    private(set) var shares: [Share] = []
+    private(set) var bills: [Bill] = []
+    private(set) var recent: [Expense] = []
+    private var amountsByDay: [Int: Double] = [:]
     var heroMetric: HeroMetric = .safeToSpend
     /// Bumps on every add so Today can play one success haptic.
     private(set) var addCount = 0
 
     func apply(_ summary: TodaySummary) {
         self.summary = summary
+        cumulative = makeCumulative()
+        amountsByDay = Dictionary(cumulative.map { ($0.day, $0.amount) }, uniquingKeysWith: { _, last in last })
+        shares = makeShares()
+        bills = makeBills()
+        recent = makeRecent()
         if !availableMetrics.contains(heroMetric) {
             heroMetric = availableMetrics.first ?? .spentThisMonth
         }
@@ -89,6 +101,11 @@ final class MonthModel {
 
     func clear() {
         summary = nil
+        cumulative = []
+        amountsByDay = [:]
+        shares = []
+        bills = []
+        recent = []
         heroMetric = .safeToSpend
     }
 
@@ -157,14 +174,14 @@ final class MonthModel {
 
     // MARK: Chart
 
-    var cumulative: [DayPoint] {
+    private func makeCumulative() -> [DayPoint] {
         (summary?.spendingByDay ?? []).map {
             DayPoint(day: $0.day, amount: (Decimal.api($0.spent) as NSDecimalNumber).doubleValue)
         }
     }
 
     func amount(on day: Int) -> Double? {
-        cumulative.first { $0.day == day }?.amount
+        amountsByDay[day]
     }
 
     /// An even pace to the budget through the end of `day`, the same line
@@ -177,7 +194,7 @@ final class MonthModel {
     // MARK: Sections
 
     /// The top three categories by spending, plus everything else.
-    var shares: [Share] {
+    private func makeShares() -> [Share] {
         let categories = (summary?.categories ?? []).map { (label: $0.label, amount: Decimal.api($0.amount)) }
         guard categories.count > 4 else {
             return categories.map { Share(id: $0.label, amount: $0.amount) }
@@ -187,7 +204,7 @@ final class MonthModel {
         return top + [Share(id: "Everything else", amount: rest)]
     }
 
-    var bills: [Bill] {
+    private func makeBills() -> [Bill] {
         guard let summary, let today = Date.apiDay(summary.date) else { return [] }
         let calendar = Calendar.current
         return summary.comingUp.prefix(3).compactMap { bill in
@@ -213,7 +230,7 @@ final class MonthModel {
         }
     }
 
-    var recent: [Expense] {
+    private func makeRecent() -> [Expense] {
         guard let summary else { return [] }
         let today = Date.apiDay(summary.date)
         return summary.recent.map { tx in

@@ -36,6 +36,19 @@ final class APIClient {
 
     var token: String?
 
+    /// No URL cache: the system's shared one would keep copies of people's
+    /// financial responses on disk outside our protected ResponseCache, and
+    /// could hand back a stale month. Every request goes to the server;
+    /// ResponseCache is what makes launch instant.
+    private let session: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.waitsForConnectivity = false
+        configuration.httpMaximumConnectionsPerHost = 6
+        return URLSession(configuration: configuration)
+    }()
+
     private let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -44,6 +57,21 @@ final class APIClient {
 
     func get<T: Decodable>(_ path: String) async throws -> T {
         try decoder.decode(T.self, from: try await send(path, method: "GET"))
+    }
+
+    /// Like `get`, but also hands back the raw response so it can be kept
+    /// on disk (ResponseCache) and shown instantly on the next launch.
+    func fetch<T: Decodable>(_ path: String) async throws -> (T, Data) {
+        let data = try await send(path, method: "GET")
+        return (try decoder.decode(T.self, from: data), data)
+    }
+
+    func decode<T: Decodable>(_ type: T.Type, from data: Data) -> T? {
+        try? decoder.decode(type, from: data)
+    }
+
+    func put(_ path: String, body: [String: Any]) async throws {
+        _ = try await send(path, method: "PUT", body: body)
     }
 
     func post<T: Decodable>(_ path: String, body: [String: Any]) async throws -> T {
@@ -77,7 +105,7 @@ final class APIClient {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await URLSession.shared.data(for: request)
+            (data, response) = try await session.data(for: request)
         } catch {
             throw APIError.offline
         }

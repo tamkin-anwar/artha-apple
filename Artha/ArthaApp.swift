@@ -34,7 +34,7 @@ struct RootView: View {
         .task { await session.start() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
-                Task { await session.refresh() }
+                Task { await session.becameActive() }
             }
         }
     }
@@ -45,10 +45,12 @@ struct RootView: View {
 struct MainTabs: View {
     enum Destination: Hashable { case today, activity, plan, wealth, add }
 
+    @Environment(AppSession.self) private var session
     @State private var selection: Destination = .today
     @State private var isAdding = false
 
     var body: some View {
+        @Bindable var session = session
         TabView(selection: $selection) {
             Tab("Today", systemImage: "gauge.with.dots.needle.33percent", value: .today) {
                 TodayView()
@@ -57,7 +59,7 @@ struct MainTabs: View {
                 ActivityView()
             }
             Tab("Plan", systemImage: "chart.line.uptrend.xyaxis", value: .plan) {
-                ComingNext(title: "Plan", symbol: "chart.line.uptrend.xyaxis")
+                PlanView()
             }
             Tab("Wealth", systemImage: "chart.bar.fill", value: .wealth) {
                 ComingNext(title: "Wealth", symbol: "chart.bar.fill")
@@ -76,6 +78,9 @@ struct MainTabs: View {
         }
         .sheet(isPresented: $isAdding) {
             AddSheet()
+        }
+        .sheet(isPresented: $session.isEditingBudget) {
+            BudgetSheet()
         }
     }
 }

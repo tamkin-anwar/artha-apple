@@ -70,6 +70,61 @@ nonisolated struct APITransaction: Decodable, Sendable, Identifiable, Equatable 
     let displayAmount: String?
 }
 
+nonisolated struct PlanSummary: Decodable, Sendable {
+    nonisolated struct Breakdown: Decodable, Sendable {
+        let bills: String
+        let everydaySpent: String
+        let everydayBudget: String
+        let left: String
+        let overBy: String
+        let perDay: String
+        let status: String?
+    }
+
+    nonisolated struct Bill: Decodable, Sendable {
+        let description: String
+        let amount: String
+        let currency: String
+        let category: String?
+        let categoryLabel: String
+        let date: String
+        /// "paid", "scheduled" (posted ahead for a later day) or "due".
+        let status: String
+        let displayAmount: String?
+    }
+
+    nonisolated struct Limit: Decodable, Sendable {
+        let key: String
+        let label: String
+        let cap: String
+        let spent: String
+        let left: String
+        let overBy: String
+        let percentUsed: Double
+        let tier: String
+    }
+
+    nonisolated struct Typical: Decodable, Sendable {
+        let months: Int
+        let overall: String
+        let byCategory: [String: String]
+    }
+
+    let date: String
+    let currency: String
+    let month: TodaySummary.Month
+    let spent: String
+    let budget: TodaySummary.Budget?
+    let breakdown: Breakdown?
+    let bills: [Bill]
+    let billsTotal: String
+    let billsPaid: String
+    let billsComing: String
+    let categoryBudgets: [Limit]
+    let unbudgetedCategories: [CategoryList.Category]
+    let typical: Typical?
+}
+
 nonisolated struct TodaySummary: Decodable, Sendable {
     nonisolated struct Month: Decodable, Sendable {
         let name: String
