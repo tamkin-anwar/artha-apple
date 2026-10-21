@@ -5,6 +5,11 @@
 	<!-- Only so the simulator can reach the local dev server over plain
 	     http://localhost. Every real server address (arthaapp.com) is HTTPS
 	     and gets no exception. -->
+	<!-- Only standard HTTPS through Apple's networking and the Keychain,
+	     which are exempt, so App Store Connect doesn't hold every build
+	     at "Missing Compliance". -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

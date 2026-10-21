@@ -7,6 +7,11 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.widgetkit-extension</string>
 	</dict>
+	<!-- Only standard HTTPS through Apple's networking and the Keychain,
+	     which are exempt, so App Store Connect doesn't hold every build
+	     at "Missing Compliance". -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
