@@ -7,7 +7,7 @@ import Observation
 /// Fast by design: a signed-in launch shows the last numbers this device
 /// saw (ResponseCache) immediately and refreshes them in the background;
 /// independent requests run side by side rather than one after another;
-/// Plan and Activity load behind Today so switching tabs never waits; and
+/// Plan, Activity and Wealth load behind Today so switching tabs never waits; and
 /// coming back to the app within a few seconds doesn't refetch anything.
 @Observable
 final class AppSession {
@@ -31,6 +31,7 @@ final class AppSession {
     let month = MonthModel()
     let activity: ActivityModel
     let plan: PlanModel
+    let wealth: WealthModel
     private let api: APIClient
     private var lastRefresh: Date?
 
@@ -39,9 +40,11 @@ final class AppSession {
         self.api = api
         activity = ActivityModel(api: api)
         plan = PlanModel(api: api)
-        // An edit in Activity or Plan changes this month's numbers too.
+        wealth = WealthModel(api: api)
+        // An edit in Activity, Plan or Wealth changes Today's numbers too.
         activity.onChange = { [weak self] in await self?.refreshAfterChange(reloadActivity: false) }
         plan.onChange = { [weak self] in await self?.refresh() }
+        wealth.onChange = { [weak self] in await self?.refresh() }
     }
 
     func start() async {
@@ -111,9 +114,11 @@ final class AppSession {
         guard phase == .signedIn else { return }
         if let lastRefresh, Date.now.timeIntervalSince(lastRefresh) < Self.freshFor { return }
         let planShown = plan.summary != nil
+        let wealthShown = wealth.summary != nil
         async let today: Void = refresh()
         async let plan: Void = planShown ? self.plan.load() : ()
-        _ = await (today, plan)
+        async let wealth: Void = wealthShown ? self.wealth.load() : ()
+        _ = await (today, plan, wealth)
     }
 
     func addTransaction(description: String, amount: Decimal, type: String) async throws {
@@ -139,14 +144,15 @@ final class AppSession {
         _ = await (today, plan, list)
     }
 
-    /// Loads Plan and Activity behind Today, so the first tap on either
-    /// shows real content instead of a spinner.
+    /// Loads Plan, Activity and Wealth behind Today, so the first tap on
+    /// any of them shows real content instead of a spinner.
     private func prefetch() {
         guard phase == .signedIn else { return }
         Task {
             async let plan: Void = self.plan.load()
             async let list: Void = activity.reload()
-            _ = await (plan, list)
+            async let wealth: Void = self.wealth.load()
+            _ = await (plan, list, wealth)
         }
     }
 
@@ -160,6 +166,7 @@ final class AppSession {
         }
         if let data = ResponseCache.load(.plan) { plan.restore(from: data) }
         if let data = ResponseCache.load(.activity) { activity.restore(from: data) }
+        if let data = ResponseCache.load(.wealth) { wealth.restore(from: data) }
     }
 
     private func signOutLocally() {
@@ -171,6 +178,7 @@ final class AppSession {
         month.clear()
         activity.clear()
         plan.clear()
+        wealth.clear()
         refreshError = nil
         isEditingBudget = false
         phase = .signedOut

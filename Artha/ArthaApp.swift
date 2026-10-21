@@ -62,7 +62,7 @@ struct MainTabs: View {
                 PlanView()
             }
             Tab("Wealth", systemImage: "chart.bar.fill", value: .wealth) {
-                ComingNext(title: "Wealth", symbol: "chart.bar.fill")
+                WealthView()
             }
             Tab("Add", systemImage: "plus", value: .add, role: .search) {
                 Color.clear
@@ -82,16 +82,5 @@ struct MainTabs: View {
         .sheet(isPresented: $session.isEditingBudget) {
             BudgetSheet()
         }
-    }
-}
-
-private struct ComingNext: View {
-    let title: String
-    let symbol: String
-
-    var body: some View {
-        ContentUnavailableView(title, systemImage: symbol, description: Text("Coming in a later build."))
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Palette.ground)
     }
 }

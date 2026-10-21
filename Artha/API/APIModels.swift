@@ -125,6 +125,51 @@ nonisolated struct PlanSummary: Decodable, Sendable {
     let typical: Typical?
 }
 
+nonisolated struct APIAccount: Decodable, Sendable, Identifiable, Equatable {
+    let id: Int
+    let name: String
+    let type: String
+    let typeLabel: String
+    /// "cash", "investments", "property" or "debts".
+    let group: String
+    let isLiability: Bool
+    /// Always positive: what's held, or for a debt, what's owed.
+    let balance: String
+    let currency: String
+    /// Only when `currency` isn't the display currency.
+    let displayBalance: String?
+    let updated: String?
+    let daysSinceUpdate: Int?
+}
+
+nonisolated struct AccountEnvelope: Decodable, Sendable {
+    let account: APIAccount
+}
+
+nonisolated struct WealthSummary: Decodable, Sendable {
+    nonisolated struct Point: Decodable, Sendable {
+        let date: String
+        let netWorth: String
+    }
+
+    nonisolated struct AccountType: Decodable, Sendable, Identifiable, Hashable {
+        let key: String
+        let label: String
+        let isLiability: Bool
+        let group: String
+        var id: String { key }
+    }
+
+    let currency: String
+    let netWorth: String?
+    let assets: String
+    let liabilities: String
+    let history: [Point]
+    let accounts: [APIAccount]
+    let accountTypes: [AccountType]
+    let currencies: [String]
+}
+
 nonisolated struct TodaySummary: Decodable, Sendable {
     nonisolated struct Month: Decodable, Sendable {
         let name: String

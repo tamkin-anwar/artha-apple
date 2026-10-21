@@ -7,7 +7,7 @@ import Foundation
 /// wiped on sign-out, so nothing outlives the session that fetched it.
 nonisolated enum ResponseCache {
     enum Key: String, CaseIterable {
-        case me, today, plan, activity
+        case me, today, plan, activity, wealth
     }
 
     private static var directory: URL {
