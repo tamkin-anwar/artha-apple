@@ -30,7 +30,7 @@ Artha and Corres are siblings, not twins. They share Anwar Creative Studio's cra
 | `band` | #1F2F57 | #16264F | `--band` |
 | `inverse` / `onInverse` | #0B1020 / #FFFFFF | #F2F4F8 / #0A0E17 | `--inverse` / `--on-inverse` |
 
-`Shared/Palette.swift` and `artha/static/css/style.css` hold the same values; change both together.
+The apps read these from `Shared/Palette.xcassets` (one color set per token, in the app and the widgets; asset colors switch the instant the appearance does). `Shared/Palette.swift` repeats each value in a comment, and the website's `static/css/style.css` holds the same values; change all three together.
 
 ### What color means
 
@@ -44,7 +44,7 @@ Artha and Corres are siblings, not twins. They share Anwar Creative Studio's cra
 - **Words:** the system face (SF Pro; Segoe UI and Roboto on the web), always a Dynamic Type text style in the apps (`.font(.system(.subheadline, weight: .semibold))`, never `size:`), so every word follows the person's text size.
 - **Money:** SF Rounded, heavy, tabular digits, through `.figureFont(_:weight:)`. Figures scale with Dynamic Type too, but display figures (40pt and up) grow at most 30%, and they keep one line with `minimumScaleFactor`, so a hero number never wraps or clips. `Font.figure` (fixed) is only for widgets.
 - **Section labels:** small tracked uppercase (`SectionLabel`; `.section-label` on the web).
-- On the web, ui-rounded (Apple devices) with Nunito as the fallback carries the rounded figures.
+- On the web, ui-rounded (Apple devices) with Nunito as the fallback carries the rounded figures, and every size is in rem, so text follows the browser's own font-size setting the way the apps follow Dynamic Type.
 
 ## Shape and space
 
@@ -57,12 +57,13 @@ Artha and Corres are siblings, not twins. They share Anwar Creative Studio's cra
 - **Pace chart:** spending so far against an even pace to the budget. Scrubbable with a finger, a pointer or the arrow keys; each day ticks a selection haptic. VoiceOver can play it as an Audio Graph.
 - **Band:** "Where October went", the one full-bleed navy band, white type on it.
 - **Cards and lists:** opaque `surface`, `Radius.card`, a hairline in Day, tonal separation only in Night.
+- **Chrome:** on the desktop web there is no top bar; search sits under the logo in the sidebar (⌘K or Ctrl K), What's new under More, Send feedback above your name. Phones keep a slim top bar with Add and Search, like the app's toolbar.
 - **Primary action:** the inverse capsule (ink on Day, white on Night). At most one per screen; the accent stays for links and selection.
 - **Status cards:** symbol tile, title, one or two sentences, one action. Never a badge or a nag.
 
 ## Mark and icon
 
-The orb: a blue planet with a warm sun on its upper left, daybreak over a world. In the app it's `OrbMark` (gradients). The icon is an Icon Composer document with two glass layers, the sun in front of the planet, on a navy field, with light, dark, clear and tinted renditions. Preview it with `ictool Artha/AppIcon.icon --export-image ...` (Xcode's Icon Composer).
+The orb: a blue planet with a warm sun on its upper left, daybreak over a world. In the app it's `OrbMark` (gradients). The icon is an Icon Composer document with two glass layers, the sun in front of the planet, on a navy field, with light, dark, clear and tinted renditions. Preview it with `ictool Artha/AppIcon.icon --export-image ...` (Xcode's Icon Composer). The website's favicons and install icons are rendered from this same file, so the browser, Windows and the Home Screen all show one icon.
 
 ## Motion and accessibility
 
