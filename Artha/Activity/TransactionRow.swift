@@ -40,7 +40,10 @@ struct TransactionRow: View {
                     .figureFont(17, weight: .bold)
                     .monospacedDigit()
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    // Only stacked rows may shrink a long figure to fit; side by
+                    // side it was shrinking even with room to spare (a 60%
+                    // "$6.75" in Today's Recent on iPad).
+                    .minimumScaleFactor(isLarge ? 0.6 : 1)
                     .foregroundStyle(expense.isIncome ? Palette.good : Palette.ink)
                 if let equivalent = expense.displayEquivalent {
                     Text("≈ \(Money.cents(equivalent, displayCurrency))")
@@ -48,6 +51,7 @@ struct TransactionRow: View {
                         .foregroundStyle(Palette.secondary)
                 }
             }
+            .layoutPriority(1)
         }
         .padding(.vertical, 11)
         .contentShape(Rectangle())

@@ -67,6 +67,13 @@ The orb: a blue planet with a warm sun glowing on its upper left, daybreak over 
 
 The app icon is an Icon Composer document (`Artha/AppIcon.icon`) holding two drawings of the orb, switched per appearance with `hidden-specializations`. In Default and Dark it's the soft orb itself: the planet and the sun as SVG radial gradients in OrbMark's colors, on the navy field, without glass, so the sun glows into the planet. In Tinted and Clear, where iOS recolors everything, a soft glow turns into a plain disc, so those show two glass discs instead, the sun in front of the planet, and the sun keeps its own shape. Preview every rendition with Icon Composer's `ictool` (`.../Icon Composer.app/Contents/Executables/ictool Artha/AppIcon.icon --export-image ... --rendition TintedDark`). The website's Home Screen and install icons are rendered from the Default rendition, so the Home Screen shows one icon whether Artha is the app or the website.
 
+## iPad and Mac
+
+- The tabs become a sidebar on iPad and the Mac (`.sidebarAdaptable`); wide screens split into two columns at 820 points (`WideLayout`).
+- The menu bar (a Mac's, and iPad's since iPadOS 26) lists every app-wide action with the same symbol it has in the app: File > Add Transaction (Command-N); Go > Today to Wealth (Command-1 to 4), Search Transactions (Command-F) and Refresh (Command-R); Money > Review Purchases and Set Budget; View > Show Sidebar. Settings is Command-comma on both. Actions that don't apply right now are disabled, never hidden.
+- Rows people act on have a context menu (right-click, or touch and hold) with the same actions as the row, and Command-Delete deletes the open transaction after the usual confirmation.
+- The Mac app is one window: no window tabs.
+
 ## Motion and accessibility
 
 - Numbers roll with `.contentTransition(.numericText)`; sheets and cards fade or move a short way. Reduce Motion keeps the state change and drops the movement.

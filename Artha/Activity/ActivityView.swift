@@ -12,6 +12,7 @@ struct ActivityView: View {
     /// The transaction open beside the list on a wide screen.
     @State private var selectedID: Int?
     @State private var width: CGFloat = 0
+    @FocusState private var searchFocused: Bool
 
     private var isWide: Bool { width >= WideLayout.twoColumnWidth }
 
@@ -81,6 +82,8 @@ struct ActivityView: View {
             .navigationTitle("Activity")
             .searchable(text: $activity.query, placement: .alwaysVisible,
                         prompt: "Search transactions")
+            .searchFocused($searchFocused)
+            .onChange(of: session.searchRequest) { searchFocused = true }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
@@ -113,6 +116,15 @@ struct ActivityView: View {
                                            displayCurrency: activity.currencyCode)
                         }
                         .buttonStyle(.plain)
+                        // Right-click on a Mac or with an iPad pointer, or
+                        // touch and hold: the same two actions as the row.
+                        .contextMenu {
+                            Button("Edit", systemImage: "pencil") { open(tx.id) }
+                            Divider()
+                            Button("Delete", systemImage: "trash", role: .destructive) {
+                                withAnimation(.snappy) { activity.delete(tx) }
+                            }
+                        }
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button("Delete", systemImage: "trash", role: .destructive) {
                                 withAnimation(.snappy) { activity.delete(tx) }

@@ -137,6 +137,9 @@ struct TransactionDetailView: View {
                 Button("Delete Transaction", role: .destructive) {
                     confirmingDelete = true
                 }
+                // Command-Delete, the iPad and Mac shortcut for deleting
+                // the thing that's open; it still asks first.
+                .keyboardShortcut(.delete, modifiers: .command)
                 .font(.system(.callout, weight: .semibold))
                 .frame(maxWidth: .infinity, minHeight: 52)
                 .background(Palette.surface, in: .rect(cornerRadius: Radius.card))

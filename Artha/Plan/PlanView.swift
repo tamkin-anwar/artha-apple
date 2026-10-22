@@ -264,7 +264,8 @@ private struct LegendRow: View {
                 .figureFont(18, weight: .bold)
                 .monospacedDigit()
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .minimumScaleFactor(isLarge ? 0.6 : 1)
+                .layoutPriority(1)
                 .foregroundStyle(emphasis)
                 .contentTransition(.numericText(value: (amount as NSDecimalNumber).doubleValue))
         }
@@ -360,7 +361,7 @@ private struct BillRowView: View {
                     .figureFont(16, weight: .bold)
                     .monospacedDigit()
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(isLarge ? 0.6 : 1)
                     .foregroundStyle(bill.isPaid ? Palette.secondary : Palette.ink)
                 if let equivalent = bill.displayEquivalent {
                     Text("≈ \(Money.whole(equivalent, displayCurrency))")
@@ -368,6 +369,7 @@ private struct BillRowView: View {
                         .foregroundStyle(Palette.secondary)
                 }
             }
+            .layoutPriority(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 11)

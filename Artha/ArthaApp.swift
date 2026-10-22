@@ -58,23 +58,57 @@ struct ArthaApp: App {
             if phase == .background { BackgroundRefresh.schedule() }
             #endif
         }
-        // Hold Command on an iPad keyboard to see these; on a Mac they're
-        // in the menu bar.
+        // The menu bar on a Mac and on iPad (swipe down from the top, or
+        // hold Command to see the shortcuts). Each item carries the symbol
+        // it has in the app, and items that don't apply right now are
+        // disabled, never hidden, so they stay where people expect them
+        // (Apple's iPadOS 26 menu bar guidance).
         .commands {
+            let signedIn = session.phase == .signedIn
+            // View > Show/Hide Sidebar (Control-Command-S), the toggle
+            // Apple's guidance puts in every View menu.
+            SidebarCommands()
             CommandGroup(replacing: .newItem) {
-                Button("Add Transaction") { session.route = .add }
+                Button("Add Transaction", systemImage: "plus") { session.route = .add }
                     .keyboardShortcut("n")
-                    .disabled(session.phase != .signedIn)
+                    .disabled(!signedIn)
             }
+            #if os(iOS)
+            // A Mac has its own Settings window on Command-comma; iPad gets
+            // the same shortcut for the Settings sheet.
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…", systemImage: "gearshape") { session.isShowingSettings = true }
+                    .keyboardShortcut(",")
+                    .disabled(!signedIn)
+            }
+            #endif
             CommandMenu("Go") {
-                Button("Today") { session.route = .today }.keyboardShortcut("1")
-                Button("Activity") { session.route = .activity }.keyboardShortcut("2")
-                Button("Plan") { session.route = .plan }.keyboardShortcut("3")
-                Button("Wealth") { session.route = .wealth }.keyboardShortcut("4")
+                Group {
+                Button("Today", systemImage: "gauge.with.dots.needle.33percent") { session.route = .today }
+                    .keyboardShortcut("1")
+                Button("Activity", systemImage: "list.bullet") { session.route = .activity }
+                    .keyboardShortcut("2")
+                Button("Plan", systemImage: "chart.line.uptrend.xyaxis") { session.route = .plan }
+                    .keyboardShortcut("3")
+                Button("Wealth", systemImage: "chart.bar.fill") { session.route = .wealth }
+                    .keyboardShortcut("4")
                 Divider()
-                Button("Refresh") { Task { await session.refreshEverythingNow() } }
+                Button("Search Transactions", systemImage: "magnifyingglass") {
+                    session.route = .activity
+                    session.searchRequest += 1
+                }
+                .keyboardShortcut("f")
+                Divider()
+                Button("Refresh", systemImage: "arrow.clockwise") { Task { await session.refreshEverythingNow() } }
                     .keyboardShortcut("r")
-                    .disabled(session.phase != .signedIn)
+                }
+                .disabled(!signedIn)
+            }
+            CommandMenu("Money") {
+                Button("Review Purchases", systemImage: "checkmark.circle") { session.isReviewing = true }
+                    .disabled(!signedIn || session.month.toReview == 0)
+                Button("Set Budget…", systemImage: "slider.horizontal.3") { session.isEditingBudget = true }
+                    .disabled(!signedIn)
             }
         }
     }
@@ -124,6 +158,9 @@ extension AppDelegate: UIApplicationDelegate {
 extension AppDelegate: NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = self
+        // One window, so no window tabs: otherwise View offers "Show Tab
+        // Bar" and "Show All Tabs", which do nothing useful here.
+        NSWindow.allowsAutomaticWindowTabbing = false
     }
 
     /// Closing the last window quits, the way single-window Mac apps do.

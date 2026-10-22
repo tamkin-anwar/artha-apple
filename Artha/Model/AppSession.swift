@@ -42,6 +42,9 @@ final class AppSession {
     private var timeZoneSynced = false
     /// Where a widget tap or artha:// link asked to go; MainTabs consumes it.
     var route: AppRoute?
+    /// Bumped by Search Transactions (Command-F) to put the cursor in
+    /// Activity's search field.
+    var searchRequest = 0
 
     let month = MonthModel()
     let activity: ActivityModel
