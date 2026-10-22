@@ -82,6 +82,12 @@ final class APIClient {
         try decoder.decode(T.self, from: try await send(path, method: "PATCH", body: body))
     }
 
+    /// Like `patch`, but also hands back the raw response to keep on disk.
+    func patchKeeping<T: Decodable>(_ path: String, body: [String: Any]) async throws -> (T, Data) {
+        let data = try await send(path, method: "PATCH", body: body)
+        return (try decoder.decode(T.self, from: data), data)
+    }
+
     func delete(_ path: String) async throws {
         _ = try await send(path, method: "DELETE")
     }

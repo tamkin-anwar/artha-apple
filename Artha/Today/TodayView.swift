@@ -125,7 +125,6 @@ struct TodayView: View {
 private struct TodayHeader: View {
     @Environment(AppSession.self) private var session
     @Environment(MonthModel.self) private var month
-    @State private var isDeletingAccount = false
 
     var body: some View {
         HStack {
@@ -142,32 +141,18 @@ private struct TodayHeader: View {
                 }
             }
             Spacer()
-            Menu {
-                Button("Log Apple Pay automatically", systemImage: "wave.3.right") {
-                    session.isShowingApplePaySetup = true
-                }
-                if let user = session.user {
-                    Section("Signed in as \(user.username)") {
-                        Button("Sign out", systemImage: "rectangle.portrait.and.arrow.right") {
-                            Task { await session.signOut() }
-                        }
-                        Button("Delete account", systemImage: "trash", role: .destructive) {
-                            isDeletingAccount = true
-                        }
-                    }
-                }
-            } label: {
+            Button { session.isShowingSettings = true } label: {
                 Text(session.user?.initials ?? "")
                     .font(.system(size: 14, weight: .semibold))
                     .frame(width: 44, height: 44)
                     .background(Palette.raised, in: Circle())
                     .foregroundStyle(Palette.ink)
             }
-            .accessibilityLabel("Account")
+            .buttonStyle(.plain)
+            .accessibilityLabel("Settings")
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
-        .sheet(isPresented: $isDeletingAccount) { DeleteAccountView() }
     }
 }
 

@@ -32,6 +32,21 @@ nonisolated struct DeletionResponse: Decodable, Sendable {
     let purgeDate: String
 }
 
+nonisolated struct PasswordChanged: Decodable, Sendable {
+    let token: String
+    let user: APIUser
+}
+
+nonisolated struct TwoFactorSetup: Decodable, Sendable {
+    let secret: String
+    let uri: String
+}
+
+nonisolated struct TwoFactorEnabled: Decodable, Sendable {
+    let recoveryCodes: [String]
+    let user: APIUser
+}
+
 nonisolated struct UserEnvelope: Decodable, Sendable {
     let user: APIUser
 }

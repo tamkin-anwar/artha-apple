@@ -92,6 +92,9 @@ struct MainTabs: View {
         .sheet(isPresented: $session.isShowingApplePaySetup) {
             ApplePaySetupView()
         }
+        .sheet(isPresented: $session.isShowingSettings) {
+            SettingsView()
+        }
         .sheet(isPresented: $session.isReviewing, onDismiss: {
             Task { await session.refreshAfterReview() }
         }) {

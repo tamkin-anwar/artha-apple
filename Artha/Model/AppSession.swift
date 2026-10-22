@@ -33,6 +33,10 @@ final class AppSession {
     var isShowingApplePaySetup = false
     /// Opens the review of purchases that logged themselves.
     var isReviewing = false
+    /// Opens Settings (tapping your initials on Today).
+    var isShowingSettings = false
+    /// The phone's time zone has been sent this launch (see syncTimeZone).
+    private var timeZoneSynced = false
     /// Where a widget tap or artha:// link asked to go; MainTabs consumes it.
     var route: AppRoute?
 
@@ -134,6 +138,7 @@ final class AppSession {
             Self.publishToWidgets(data)
             refreshError = nil
             lastRefresh = .now
+            await syncTimeZone()
         } catch APIError.unauthorized {
             signOutLocally()
         } catch let error as APIError {
@@ -180,6 +185,73 @@ final class AppSession {
             URLQueryItem(name: "category", value: categories.joined(separator: ",")),
         ]
         return try await api.get(components.string ?? "transactions")
+    }
+
+    // MARK: Settings
+
+    /// Saves profile changes (any of first_name, last_name, email,
+    /// currency, timezone). A new currency changes every total, so all
+    /// of them reload.
+    func updateProfile(_ changes: [String: Any]) async throws {
+        let (envelope, data): (UserEnvelope, Data) = try await api.patchKeeping("me", body: changes)
+        let currencyChanged = envelope.user.currency != user?.currency
+        user = envelope.user
+        ResponseCache.save(data, as: .me)
+        if currencyChanged { await refreshEverything() }
+    }
+
+    /// The new password signs every device out, this one included, so the
+    /// server hands this one a fresh token to keep going.
+    func changePassword(current: String, new: String) async throws {
+        let response: PasswordChanged = try await api.post("me/password",
+                                                           body: ["current_password": current, "new_password": new])
+        Keychain.save(response.token, account: Keychain.tokenAccount)
+        api.token = response.token
+        user = response.user
+    }
+
+    /// Who's signed in, fresh from the server, for Settings to show the
+    /// current name, email and two-factor state (the saved copy can be
+    /// older than a change made on the web).
+    func refreshUser() async {
+        guard let (envelope, data): (UserEnvelope, Data) = try? await api.fetch("me") else { return }
+        user = envelope.user
+        ResponseCache.save(data, as: .me)
+    }
+
+    func startTwoFactor() async throws -> TwoFactorSetup {
+        try await api.post("me/two-factor/setup", body: [:])
+    }
+
+    /// Returns the recovery codes, shown once.
+    func enableTwoFactor(secret: String, code: String) async throws -> [String] {
+        let response: TwoFactorEnabled = try await api.post("me/two-factor", body: ["secret": secret, "code": code])
+        user = response.user
+        return response.recoveryCodes
+    }
+
+    func disableTwoFactor(password: String, code: String) async throws {
+        let envelope: UserEnvelope = try await api.delete("me/two-factor", body: ["password": password, "code": code])
+        user = envelope.user
+    }
+
+    /// Keeps the account's "today" on the phone's clock, the way the
+    /// website follows the browser's: once a launch, only if it differs.
+    private func syncTimeZone() async {
+        guard !timeZoneSynced, let user else { return }
+        timeZoneSynced = true
+        let here = TimeZone.current.identifier
+        guard user.timezone != here else { return }
+        try? await updateProfile(["timezone": here])
+    }
+
+    /// Every screen at once, e.g. after the display currency changes.
+    private func refreshEverything() async {
+        async let today: Void = refresh()
+        async let plan: Void = self.plan.load()
+        async let list: Void = activity.reload()
+        async let wealth: Void = self.wealth.load()
+        _ = await (today, plan, list, wealth)
     }
 
     /// Purchases that logged themselves and are waiting for a look,
@@ -265,6 +337,8 @@ final class AppSession {
         isEditingBudget = false
         isShowingApplePaySetup = false
         isReviewing = false
+        isShowingSettings = false
+        timeZoneSynced = false
         phase = .signedOut
     }
 
