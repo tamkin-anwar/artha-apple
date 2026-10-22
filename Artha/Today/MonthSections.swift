@@ -4,6 +4,8 @@ import SwiftUI
 /// everything else, told apart by four clear steps of white.
 struct WhereItWent: View {
     @Environment(MonthModel.self) private var month
+    /// A rounded card in a column (wide screens) instead of a full-width band.
+    var asCard = false
     private let opacities: [Double] = [1, 0.66, 0.4, 0.12]
 
     var body: some View {
@@ -44,7 +46,7 @@ struct WhereItWent: View {
                             Text(share.name)
                                 .font(.system(size: 15))
                                 .lineLimit(1)
-                                .minimumScaleFactor(0.8)
+                                .minimumScaleFactor(0.65)
                             Spacer(minLength: 4)
                             Text(Money.whole(share.amount, month.currencyCode))
                                 .font(.figure(16))
@@ -64,7 +66,7 @@ struct WhereItWent: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 22)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.band)
+        .background(Palette.band, in: .rect(cornerRadius: asCard ? 24 : 0))
         .animation(.snappy(duration: 0.45), value: month.spent)
     }
 }

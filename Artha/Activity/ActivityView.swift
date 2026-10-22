@@ -8,30 +8,45 @@ struct ActivityView: View {
     @Environment(AppSession.self) private var session
     @Environment(\.scenePhase) private var scenePhase
     @State private var path: [Int] = []
+    /// The transaction open beside the list on a wide screen.
+    @State private var selectedID: Int?
+    @State private var width: CGFloat = 0
+
+    private var isWide: Bool { width >= WideLayout.twoColumnWidth }
 
     var body: some View {
-        @Bindable var activity = session.activity
-        NavigationStack(path: $path) {
-            list
-                .navigationTitle("Activity")
-                .navigationDestination(for: Int.self) { id in
-                    TransactionDetailView(transactionID: id)
-                }
-                .searchable(text: $activity.query, placement: .navigationBarDrawer(displayMode: .always),
-                            prompt: "Search transactions")
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Picker("Show", selection: $activity.filter) {
-                                ForEach(ActivityModel.Filter.allCases) { Text($0.rawValue).tag($0) }
-                            }
-                        } label: {
-                            Label("Show", systemImage: activity.filter == .all
-                                  ? "line.3.horizontal.decrease"
-                                  : "line.3.horizontal.decrease.circle.fill")
+        let activity = session.activity
+        Group {
+            if isWide {
+                // Wide (iPad, landscape): the list and the open transaction
+                // side by side, the way Mail and Notes work.
+                NavigationSplitView {
+                    searchableList
+                } detail: {
+                    NavigationStack {
+                        if let id = selectedID, session.activity.transaction(id: id) != nil {
+                            TransactionDetailView(transactionID: id).id(id)
+                        } else {
+                            ContentUnavailableView("No transaction selected", systemImage: "list.bullet",
+                                                   description: Text("Pick one from the list to see it or change it."))
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(Palette.ground)
                         }
                     }
                 }
+                .navigationSplitViewStyle(.balanced)
+            } else {
+                NavigationStack(path: $path) {
+                    searchableList
+                        .navigationDestination(for: Int.self) { id in
+                            TransactionDetailView(transactionID: id)
+                        }
+                }
+            }
+        }
+        .readWidth($width)
+        .onChange(of: session.activity.pendingDelete?.id) { _, id in
+            if let id, id == selectedID { selectedID = nil }
         }
         .task(id: "\(activity.query)|\(activity.filter.rawValue)") {
             // Wait for a pause in typing before searching; the first load
@@ -56,6 +71,31 @@ struct ActivityView: View {
         }
     }
 
+    private var searchableList: some View {
+        @Bindable var activity = session.activity
+        return list
+            .navigationTitle("Activity")
+            .searchable(text: $activity.query, placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: "Search transactions")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Picker("Show", selection: $activity.filter) {
+                            ForEach(ActivityModel.Filter.allCases) { Text($0.rawValue).tag($0) }
+                        }
+                    } label: {
+                        Label("Show", systemImage: activity.filter == .all
+                              ? "line.3.horizontal.decrease"
+                              : "line.3.horizontal.decrease.circle.fill")
+                    }
+                }
+            }
+    }
+
+    private func open(_ id: Int) {
+        if isWide { selectedID = id } else { path.append(id) }
+    }
+
     private var list: some View {
         let activity = session.activity
         return List {
@@ -63,7 +103,7 @@ struct ActivityView: View {
                 Section {
                     ForEach(day.transactions) { tx in
                         Button {
-                            path.append(tx.id)
+                            open(tx.id)
                         } label: {
                             TransactionRow(expense: .init(tx, detail: Self.detail(for: tx)),
                                            displayCurrency: activity.currencyCode)
@@ -74,7 +114,7 @@ struct ActivityView: View {
                             }
                             .tint(.red)
                         }
-                        .listRowBackground(Palette.ground)
+                        .listRowBackground(isWide && tx.id == selectedID ? Palette.raised : Palette.ground)
                         .listRowSeparatorTint(Palette.ink.opacity(0.07))
                         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                     }

@@ -18,6 +18,9 @@ struct TodayView: View {
     @Environment(AppSession.self) private var session
     @Environment(MonthModel.self) private var month
     @State private var path: [TodayRoute] = []
+    @State private var width: CGFloat = 0
+
+    private var isWide: Bool { width >= WideLayout.twoColumnWidth }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -46,9 +49,11 @@ struct TodayView: View {
                 TodayHeader()
                 content
             }
+            .centeredContent()
             .padding(.bottom, 120)
             .animation(.snappy(duration: 0.35), value: month.status)
         }
+        .readWidth($width)
         .scrollIndicators(.hidden)
         .refreshable { await session.refresh() }
         .background(Palette.ground)
@@ -79,6 +84,8 @@ struct TodayView: View {
             }
         } else if month.isEmpty {
             FirstDay()
+                .frame(maxWidth: 680)
+                .frame(maxWidth: .infinity)
         } else {
             if let error = session.refreshError {
                 Label(error, systemImage: "wifi.exclamationmark")
@@ -87,32 +94,43 @@ struct TodayView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
             }
-            HeroSection()
-                .padding(.horizontal, 20)
-                .padding(.top, 26)
-            PaceChart()
-                .padding(.horizontal, 16)
-                .padding(.top, 22)
-            if month.toReview > 0 {
-                ReviewCard().padding(.horizontal, 16).padding(.top, 24)
-            }
-            if !month.hasBudget {
-                NoBudgetCard().padding(.horizontal, 16).padding(.top, 24)
-            } else if month.status == .ahead {
-                AheadCard().padding(.horizontal, 16).padding(.top, 24)
-            } else if month.status == .over {
-                OverCard().padding(.horizontal, 16).padding(.top, 24)
-            }
-            if !month.shares.isEmpty {
-                WhereItWent().padding(.top, 30)
-            }
-            if !month.bills.isEmpty {
-                ComingUp().padding(.top, 30)
-            }
-            if !month.recent.isEmpty {
-                RecentList()
+            // On a wide screen the month's number and its chart sit on the
+            // left, and where it went, what's coming and what just happened
+            // on the right, so the whole month reads at a glance.
+            Columns(isWide: isWide, spacing: 8) {
+                HeroSection()
                     .padding(.horizontal, 20)
-                    .padding(.top, 24)
+                    .padding(.top, 26)
+                PaceChart()
+                    .padding(.horizontal, 16)
+                    .padding(.top, 22)
+                if month.toReview > 0 {
+                    ReviewCard().padding(.horizontal, 16).padding(.top, 24)
+                }
+                if !month.hasBudget {
+                    NoBudgetCard().padding(.horizontal, 16).padding(.top, 24)
+                } else if month.status == .ahead {
+                    AheadCard().padding(.horizontal, 16).padding(.top, 24)
+                } else if month.status == .over {
+                    OverCard().padding(.horizontal, 16).padding(.top, 24)
+                }
+                if isWide, !month.bills.isEmpty {
+                    ComingUp().padding(.top, 30)
+                }
+            } trailing: {
+                if !month.shares.isEmpty {
+                    WhereItWent(asCard: isWide)
+                        .padding(.horizontal, isWide ? 16 : 0)
+                        .padding(.top, isWide ? 26 : 30)
+                }
+                if !isWide, !month.bills.isEmpty {
+                    ComingUp().padding(.top, 30)
+                }
+                if !month.recent.isEmpty {
+                    RecentList()
+                        .padding(.horizontal, 20)
+                        .padding(.top, 24)
+                }
             }
         }
     }

@@ -9,6 +9,7 @@ import SwiftUI
 struct PlanView: View {
     @Environment(AppSession.self) private var session
     @State private var editingLimit: LimitTarget?
+    @State private var width: CGFloat = 0
 
     private var plan: PlanModel { session.plan }
 
@@ -18,22 +19,34 @@ struct PlanView: View {
                 if plan.summary == nil {
                     loading
                 } else {
-                    VStack(alignment: .leading, spacing: 30) {
-                        PlanCard()
-                        BillsSection()
-                        LimitsSection(editingLimit: $editingLimit)
-                        MonthByMonth()
+                    // Wide: this month (budget, bills) on the left, the
+                    // longer view (limits, past months) on the right.
+                    Columns(isWide: width >= WideLayout.twoColumnWidth, spacing: 24) {
+                        VStack(alignment: .leading, spacing: 30) {
+                            PlanCard()
+                            BillsSection()
+                        }
+                    } trailing: {
+                        VStack(alignment: .leading, spacing: 30) {
+                            LimitsSection(editingLimit: $editingLimit)
+                            MonthByMonth()
+                        }
+                        .padding(.top, width >= WideLayout.twoColumnWidth ? 0 : 30)
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 6)
                     .padding(.bottom, 120)
+                    .centeredContent()
                 }
             }
+            .readWidth($width)
             .scrollIndicators(.hidden)
             .background(Palette.ground)
             .refreshable { await plan.load() }
             .navigationTitle(plan.monthName.isEmpty ? "Plan" : "\(plan.monthName) plan")
-            .toolbarTitleDisplayMode(.inlineLarge)
+            // On iPad the floating tab bar sits where an inline title
+            // would, so the title goes large, under it.
+            .toolbarTitleDisplayMode(width >= WideLayout.twoColumnWidth ? .large : .inlineLarge)
         }
         .task { if plan.summary == nil { await plan.load() } }
         .sheet(item: $editingLimit) { target in

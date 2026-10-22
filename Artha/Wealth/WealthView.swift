@@ -10,6 +10,7 @@ import SwiftUI
 struct WealthView: View {
     @Environment(AppSession.self) private var session
     @State private var sheet: WealthSheet?
+    @State private var width: CGFloat = 0
 
     private var wealth: WealthModel { session.wealth }
 
@@ -21,7 +22,9 @@ struct WealthView: View {
                 } else if !wealth.hasAccounts {
                     EmptyWealth(sheet: $sheet)
                 } else {
-                    VStack(alignment: .leading, spacing: 0) {
+                    // Wide: net worth and how it moved on the left, every
+                    // account on the right.
+                    Columns(isWide: width >= WideLayout.twoColumnWidth, spacing: 8) {
                         NetWorthHero()
                             .padding(.horizontal, 20)
                         NetWorthChart()
@@ -38,23 +41,28 @@ struct WealthView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.top, 16)
                         }
-                        ForEach(wealth.groups) { group in
+                    } trailing: {
+                        ForEach(Array(wealth.groups.enumerated()), id: \.element.id) { index, group in
                             AccountGroupView(group: group, currencyCode: wealth.currencyCode) { account in
                                 sheet = .edit(account)
                             }
                             .padding(.horizontal, 16)
-                            .padding(.top, 28)
+                            .padding(.top, index == 0 && width >= WideLayout.twoColumnWidth ? 6 : 28)
                         }
                     }
                     .padding(.top, 4)
                     .padding(.bottom, 120)
+                    .centeredContent()
                 }
             }
+            .readWidth($width)
             .scrollIndicators(.hidden)
             .background(Palette.ground)
             .refreshable { await wealth.load() }
             .navigationTitle("Wealth")
-            .toolbarTitleDisplayMode(.inlineLarge)
+            // On iPad the floating tab bar sits where an inline title
+            // would, so the title goes large, under it.
+            .toolbarTitleDisplayMode(width >= WideLayout.twoColumnWidth ? .large : .inlineLarge)
             .toolbar {
                 if wealth.hasAccounts {
                     ToolbarItem(placement: .topBarTrailing) {

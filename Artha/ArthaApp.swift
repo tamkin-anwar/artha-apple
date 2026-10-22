@@ -19,6 +19,20 @@ struct ArthaApp: App {
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { BackgroundRefresh.schedule() }
         }
+        // For iPads with a keyboard: hold Command to see these.
+        .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("Add Transaction") { session.route = .add }
+                    .keyboardShortcut("n")
+                    .disabled(session.phase != .signedIn)
+            }
+            CommandMenu("Go") {
+                Button("Today") { session.route = .today }.keyboardShortcut("1")
+                Button("Activity") { session.route = .activity }.keyboardShortcut("2")
+                Button("Plan") { session.route = .plan }.keyboardShortcut("3")
+                Button("Wealth") { session.route = .wealth }.keyboardShortcut("4")
+            }
+        }
         // Keeps bill reminders and budget alerts current while the app is
         // closed: iOS wakes it now and then (more often for people who open
         // it often) to refresh the numbers.
@@ -127,6 +141,18 @@ struct MainTabs: View {
             }
         }
         .tint(Palette.accent)
+        // iPhone keeps its bottom tab bar; iPad gets Apple's floating top
+        // bar that opens into a sidebar.
+        .tabViewStyle(.sidebarAdaptable)
+        .tabViewSidebarHeader {
+            HStack(spacing: 10) {
+                OrbMark().frame(width: 26, height: 26)
+                Text("Artha")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+            }
+            .padding(.vertical, 4)
+        }
         .tabBarMinimizeBehavior(.onScrollDown)
         .onChange(of: selection) { previous, current in
             if current == .add {
