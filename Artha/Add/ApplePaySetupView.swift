@@ -32,12 +32,12 @@ struct ApplePaySetupView: View {
                         .foregroundStyle(Palette.accent)
                         .accessibilityHidden(true)
                     Text("Log Apple Pay purchases automatically")
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.system(.title, weight: .bold))
                         .tracking(-0.4)
                         .foregroundStyle(Palette.ink)
                         .padding(.top, 14)
                     Text("Set it up once in Shortcuts. After that, every tap with Apple Pay logs itself in Artha, in the currency you paid in, without opening the app. It takes about two minutes.")
-                        .font(.system(size: 16))
+                        .font(.system(.callout))
                         .foregroundStyle(Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 8)
@@ -51,17 +51,17 @@ struct ApplePaySetupView: View {
                         ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                             HStack(alignment: .top, spacing: 14) {
                                 Text("\(index + 1)")
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.system(.subheadline, weight: .bold))
                                     .monospacedDigit()
                                     .foregroundStyle(Palette.onInverse)
                                     .frame(width: 28, height: 28)
                                     .background(Palette.inverse, in: Circle())
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(step.title)
-                                        .font(.system(size: 16, weight: .semibold))
+                                        .font(.system(.callout, weight: .semibold))
                                         .foregroundStyle(Palette.ink)
                                     Text(step.detail)
-                                        .font(.system(size: 14))
+                                        .font(.system(.subheadline))
                                         .foregroundStyle(Palette.secondary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
@@ -76,7 +76,7 @@ struct ApplePaySetupView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 4)
-                    .background(Palette.surface, in: .rect(cornerRadius: 20))
+                    .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
                     .padding(.top, 24)
 
                     VStack(alignment: .leading, spacing: 10) {
@@ -102,7 +102,7 @@ struct ApplePaySetupView: View {
                     if let url = URL(string: "shortcuts://") { openURL(url) }
                 } label: {
                     Text("Open Shortcuts")
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.system(.body, weight: .bold))
                         .frame(maxWidth: .infinity, minHeight: 58)
                         .background(Palette.inverse, in: Capsule())
                         .foregroundStyle(Palette.onInverse)
@@ -128,21 +128,21 @@ struct ApplePaySetupView: View {
         var body: some View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 20))
+                    .font(.system(.title3))
                     .foregroundStyle(Palette.good)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("It's working")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                         .foregroundStyle(Palette.ink)
                     Text(detail)
-                        .font(.system(size: 14))
+                        .font(.system(.subheadline))
                         .foregroundStyle(Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
             }
             .padding(14)
-            .background(Palette.good.opacity(0.12), in: .rect(cornerRadius: 16))
+            .background(Palette.good.opacity(0.12), in: .rect(cornerRadius: Radius.inner))
             .accessibilityElement(children: .combine)
         }
 
@@ -160,11 +160,11 @@ struct ApplePaySetupView: View {
         var body: some View {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: symbol)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.footnote, weight: .semibold))
                     .foregroundStyle(Palette.secondary)
                     .frame(width: 20)
                 Text(text)
-                    .font(.system(size: 13))
+                    .font(.system(.footnote))
                     .foregroundStyle(Palette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

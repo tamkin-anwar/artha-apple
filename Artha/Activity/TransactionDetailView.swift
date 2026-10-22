@@ -52,9 +52,9 @@ struct TransactionDetailView: View {
             VStack(spacing: 28) {
                 VStack(spacing: 10) {
                     Image(systemName: CategoryStyle.symbol(for: category, type: type))
-                        .font(.system(size: 22, weight: .medium))
+                        .font(.system(.title2, weight: .medium))
                         .frame(width: 56, height: 56)
-                        .background(Palette.raised, in: .rect(cornerRadius: 17))
+                        .background(Palette.raised, in: .rect(cornerRadius: Radius.card))
                         .foregroundStyle(Palette.ink)
                         .contentTransition(.symbolEffect(.replace))
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
@@ -66,11 +66,13 @@ struct TransactionDetailView: View {
                             .foregroundStyle(Palette.ink)
                             .accessibilityLabel("Amount")
                     }
-                    .font(.figure(52))
+                    .figureFont(52)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .monospacedDigit()
                     if let equivalent = tx.displayAmount, tx.currency != session.activity.currencyCode {
                         Text("≈ \(Money.cents(Decimal.api(equivalent), session.activity.currencyCode)) when it was added")
-                            .font(.system(size: 13))
+                            .font(.system(.footnote))
                             .foregroundStyle(Palette.secondary)
                     }
                 }
@@ -113,10 +115,10 @@ struct TransactionDetailView: View {
                         }
                     }
                 }
-                .font(.system(size: 16))
+                .font(.system(.callout))
                 .tint(Palette.accent)
                 .padding(.horizontal, 16)
-                .background(Palette.surface, in: .rect(cornerRadius: 20))
+                .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
 
                 VStack(alignment: .leading, spacing: 6) {
                     if category != nil, category != tx.category {
@@ -126,7 +128,7 @@ struct TransactionDetailView: View {
                         Text(error).foregroundStyle(Palette.caution)
                     }
                 }
-                .font(.system(size: 13))
+                .font(.system(.footnote))
                 .foregroundStyle(Palette.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
@@ -135,9 +137,9 @@ struct TransactionDetailView: View {
                 Button("Delete Transaction", role: .destructive) {
                     confirmingDelete = true
                 }
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
                 .frame(maxWidth: .infinity, minHeight: 52)
-                .background(Palette.surface, in: .rect(cornerRadius: 20))
+                .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
                 .confirmationDialog(tx.isRecurring ? "This repeats. Deleting it also stops it repeating." : "Delete this transaction?",
                                     isPresented: $confirmingDelete, titleVisibility: .visible) {
                     Button("Delete", role: .destructive) {

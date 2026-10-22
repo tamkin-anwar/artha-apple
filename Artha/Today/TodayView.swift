@@ -89,7 +89,7 @@ struct TodayView: View {
         } else {
             if let error = session.refreshError {
                 Label(error, systemImage: "wifi.exclamationmark")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(.footnote, weight: .medium))
                     .foregroundStyle(Palette.caution)
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
@@ -165,18 +165,18 @@ private struct TodayHeader: View {
                 OrbMark().frame(width: 30, height: 30)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(month.headerDate)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                         .tracking(0.5)
                         .foregroundStyle(Palette.secondary)
                     Text("Today")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.system(.title2, weight: .bold))
                         .foregroundStyle(Palette.ink)
                 }
             }
             Spacer()
             Button(action: openAccountSettings) {
                 Text(session.user?.initials ?? "")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .frame(width: 44, height: 44)
                     .background(Palette.raised, in: Circle())
                     .foregroundStyle(Palette.ink)
@@ -195,7 +195,7 @@ struct SectionLabel: View {
 
     var body: some View {
         Text(title.uppercased())
-            .font(.system(size: 13, weight: .bold))
+            .font(.system(.footnote, weight: .bold))
             .tracking(1)
             .foregroundStyle(Palette.secondary)
     }
@@ -206,7 +206,7 @@ struct CapsuleButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 15, weight: .semibold))
+            .font(.system(.subheadline, weight: .semibold))
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(prominent ? Palette.inverse : Palette.raised, in: Capsule())
             .foregroundStyle(prominent ? Palette.onInverse : Palette.ink)

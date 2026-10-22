@@ -18,9 +18,9 @@ struct HeroSection: View {
                 HStack(spacing: 4) {
                     Text(month.heroMetric.rawValue)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(.caption, weight: .bold))
                 }
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundStyle(Palette.secondary)
                 .frame(minHeight: 32)
             }
@@ -29,7 +29,7 @@ struct HeroSection: View {
             .buttonStyle(.plain)
 
             Text(Money.whole(month.heroValue, month.currencyCode))
-                .font(.figure(76))
+                .figureFont(76)
                 .monospacedDigit()
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
@@ -43,7 +43,7 @@ struct HeroSection: View {
                     StatusBadge(status: month.status, overBy: month.overBy, currencyCode: month.currencyCode)
                 }
                 Text(subtitle)
-                    .font(.system(size: 15))
+                    .font(.system(.subheadline))
                     .monospacedDigit()
                     .foregroundStyle(Palette.secondary)
                     .contentTransition(.numericText())
@@ -80,10 +80,10 @@ struct StatusBadge: View {
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: symbol)
-                .font(.system(size: 11, weight: .heavy))
+                .font(.system(.caption2, weight: .heavy))
             Text(text)
         }
-        .font(.system(size: 13, weight: .bold))
+        .font(.system(.footnote, weight: .bold))
         .foregroundStyle(color)
         .padding(.leading, 8)
         .padding(.trailing, 11)

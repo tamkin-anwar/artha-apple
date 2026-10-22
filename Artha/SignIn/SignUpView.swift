@@ -29,11 +29,11 @@ struct SignUpView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("Create your account")
-                        .font(.system(size: 30, weight: .bold))
+                        .font(.system(.title, weight: .bold))
                         .tracking(-0.4)
                         .foregroundStyle(Palette.ink)
                     Text("No bank login and no ads. The same account works on arthaapp.com.")
-                        .font(.system(size: 16))
+                        .font(.system(.callout))
                         .foregroundStyle(Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 6)
@@ -73,18 +73,18 @@ struct SignUpView: View {
                             .onSubmit(submit)
                             .fieldStyle()
                     }
-                    .background(Palette.surface, in: .rect(cornerRadius: 18))
+                    .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
                     .padding(.top, 28)
 
                     Text("At least 8 characters.")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundStyle(Palette.secondary)
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
 
                     HStack {
                         Text("Currency")
-                            .font(.system(size: 17))
+                            .font(.system(.body))
                             .foregroundStyle(Palette.ink)
                         Spacer()
                         Picker("Currency", selection: $currency) {
@@ -99,11 +99,11 @@ struct SignUpView: View {
                     .padding(.leading, 16)
                     .padding(.trailing, 6)
                     .frame(minHeight: 54)
-                    .background(Palette.surface, in: .rect(cornerRadius: 18))
+                    .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
                     .padding(.top, 20)
 
                     Text("Totals and budgets show in this currency. You can change it later on arthaapp.com.")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundStyle(Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 16)
@@ -111,7 +111,7 @@ struct SignUpView: View {
 
                     if let error {
                         Text(error)
-                            .font(.system(size: 14))
+                            .font(.system(.subheadline))
                             .foregroundStyle(Palette.caution)
                             .padding(.horizontal, 4)
                             .padding(.top, 16)
@@ -126,7 +126,7 @@ struct SignUpView: View {
                                 Text("Create account")
                             }
                         }
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.system(.body, weight: .bold))
                         .frame(maxWidth: .infinity, minHeight: 56)
                         .background(Palette.inverse, in: Capsule())
                         .foregroundStyle(Palette.onInverse)
@@ -137,7 +137,7 @@ struct SignUpView: View {
                     .padding(.top, 24)
 
                     Link("How Artha handles your data", destination: URL(string: "https://arthaapp.com/privacy")!)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(Palette.accent)
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .padding(.top, 8)

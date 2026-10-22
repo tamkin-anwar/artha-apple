@@ -27,7 +27,7 @@ struct LimitSheet: View {
                     .frame(minHeight: 44)
                 Spacer()
                 Text(existing.map { "\($0.label) limit" } ?? "New limit")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Palette.ink)
                 Spacer()
                 Color.clear.frame(width: 52, height: 1)
@@ -47,9 +47,9 @@ struct LimitSheet: View {
                         }
                         Text(categoryLabel ?? "Choose a category")
                         Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(.caption, weight: .semibold))
                     }
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .padding(.horizontal, 16)
                     .frame(minHeight: 44)
                     .background(Palette.raised, in: Capsule())
@@ -62,7 +62,7 @@ struct LimitSheet: View {
                 .padding(.top, existing == nil ? 26 : 40)
 
             Text("a month")
-                .font(.system(size: 14))
+                .font(.system(.subheadline))
                 .foregroundStyle(Palette.secondary)
                 .padding(.top, 6)
 
@@ -77,22 +77,22 @@ struct LimitSheet: View {
             Toggle(isOn: $rollover) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Carry over what's left")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(.callout, weight: .medium))
                         .foregroundStyle(Palette.ink)
                     Text("Unspent money moves to next month. Going over takes it off next month.")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundStyle(Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .tint(Palette.good)
             .padding(16)
-            .background(Palette.surface, in: .rect(cornerRadius: 18))
+            .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             .padding(.top, 26)
 
             if let error {
                 Text(error)
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.caution)
                     .padding(.top, 14)
             }
@@ -101,7 +101,7 @@ struct LimitSheet: View {
 
             if let existing {
                 Button("Remove limit", role: .destructive) { remove(existing.key) }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .frame(minHeight: 44)
                     .disabled(isSaving)
                     .padding(.bottom, 6)
@@ -115,7 +115,7 @@ struct LimitSheet: View {
                         Text(existing == nil ? "Add limit" : "Save")
                     }
                 }
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(.body, weight: .bold))
                 .frame(maxWidth: .infinity, minHeight: 58)
                 .background(Palette.inverse, in: Capsule())
                 .foregroundStyle(Palette.onInverse)

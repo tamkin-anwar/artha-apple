@@ -35,14 +35,14 @@ struct GoalSheet: View {
                     .frame(minHeight: 44)
                 Spacer()
                 Text(existing == nil ? "New goal" : "Goal")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Palette.ink)
                 Spacer()
                 Color.clear.frame(width: 52, height: 1)
             }
 
             TextField("What it's for", text: $name)
-                .font(.system(size: 20, weight: .semibold))
+                .font(.system(.title3, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Palette.ink)
                 .focused($nameFocused)
@@ -55,18 +55,18 @@ struct GoalSheet: View {
 
             VStack(spacing: 0) {
                 Toggle("By a date", isOn: $hasDate.animation(.snappy))
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(.callout, weight: .medium))
                     .foregroundStyle(Palette.ink)
                     .tint(Palette.good)
                     .frame(minHeight: 48)
                 if hasDate {
                     DatePicker("Date", selection: $date, in: Date.now..., displayedComponents: .date)
-                        .font(.system(size: 16))
+                        .font(.system(.callout))
                         .foregroundStyle(Palette.ink)
                         .frame(minHeight: 48)
                     if let perMonth {
                         Text("About \(Money.whole(perMonth, currencyCode)) a month from now")
-                            .font(.system(size: 13))
+                            .font(.system(.footnote))
                             .foregroundStyle(Palette.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.bottom, 10)
@@ -74,12 +74,12 @@ struct GoalSheet: View {
                 }
             }
             .padding(.horizontal, 16)
-            .background(Palette.surface, in: .rect(cornerRadius: 18))
+            .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             .padding(.top, 24)
 
             if let error {
                 Text(error)
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.caution)
                     .padding(.top, 14)
             }
@@ -88,7 +88,7 @@ struct GoalSheet: View {
 
             if existing != nil {
                 Button("Delete goal", role: .destructive) { confirmingDelete = true }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .frame(minHeight: 44)
                     .disabled(isSaving)
                     .padding(.bottom, 6)
@@ -102,7 +102,7 @@ struct GoalSheet: View {
                         Text(existing == nil ? "Add goal" : "Save")
                     }
                 }
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(.body, weight: .bold))
                 .frame(maxWidth: .infinity, minHeight: 58)
                 .background(Palette.inverse, in: Capsule())
                 .foregroundStyle(Palette.onInverse)
@@ -205,7 +205,7 @@ struct GoalMoneySheet: View {
                     .frame(minHeight: 44)
                 Spacer()
                 Text(goal.name)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                 Spacer()
@@ -223,7 +223,7 @@ struct GoalMoneySheet: View {
                 .padding(.top, 30)
 
             Text("\(Money.natural(Decimal.api(goal.saved), goal.currency)) of \(Money.natural(Decimal.api(goal.target), goal.currency)) so far")
-                .font(.system(size: 14))
+                .font(.system(.subheadline))
                 .foregroundStyle(Palette.secondary)
                 .padding(.top, 8)
 
@@ -236,7 +236,7 @@ struct GoalMoneySheet: View {
 
             if let error {
                 Text(error)
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.caution)
                     .padding(.top, 14)
             }
@@ -251,7 +251,7 @@ struct GoalMoneySheet: View {
                         Text(takingOut ? "Take out" : "Add")
                     }
                 }
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(.body, weight: .bold))
                 .frame(maxWidth: .infinity, minHeight: 58)
                 .background(Palette.inverse, in: Capsule())
                 .foregroundStyle(Palette.onInverse)

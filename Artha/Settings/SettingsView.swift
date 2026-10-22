@@ -52,16 +52,16 @@ struct SettingsView: View {
         Section {
             VStack(spacing: 10) {
                 Text(user.initials)
-                    .font(.system(size: 26, weight: .semibold))
+                    .font(.system(.title2, weight: .semibold))
                     .frame(width: 72, height: 72)
                     .background(Palette.raised, in: Circle())
                     .foregroundStyle(Palette.ink)
                 VStack(spacing: 2) {
                     Text(user.displayName)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(.title3, weight: .bold))
                         .foregroundStyle(Palette.ink)
                     Text(user.email ?? user.username)
-                        .font(.system(size: 15))
+                        .font(.system(.subheadline))
                         .foregroundStyle(Palette.secondary)
                 }
             }
@@ -155,7 +155,7 @@ struct SettingsView: View {
                     Text(month.applePay == nil ? "Not set up" : "On")
                         .foregroundStyle(Palette.secondary)
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(.footnote, weight: .semibold))
                         .foregroundStyle(Palette.secondary.opacity(0.6))
                 }
             }
@@ -238,7 +238,7 @@ struct SettingsRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: symbol)
-                .font(.system(size: 16, weight: .medium))
+                .font(.system(.callout, weight: .medium))
                 .foregroundStyle(Palette.accent)
                 .frame(width: 24)
             Text(title)
@@ -251,7 +251,7 @@ struct SettingsRow: View {
             if external {
                 Spacer()
                 Image(systemName: "arrow.up.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                     .foregroundStyle(Palette.secondary.opacity(0.6))
             }
         }

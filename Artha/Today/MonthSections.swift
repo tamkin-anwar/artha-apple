@@ -4,6 +4,7 @@ import SwiftUI
 /// everything else, told apart by four clear steps of white.
 struct WhereItWent: View {
     @Environment(MonthModel.self) private var month
+    @Environment(\.dynamicTypeSize) private var typeSize
     /// A rounded card in a column (wide screens) instead of a full-width band.
     var asCard = false
     private let opacities: [Double] = [1, 0.66, 0.4, 0.12]
@@ -11,14 +12,19 @@ struct WhereItWent: View {
     var body: some View {
         let shares = month.shares
         let total = max(1, (shares.reduce(Decimal(0)) { $0 + $1.amount } as NSDecimalNumber).doubleValue)
+        // At accessibility text sizes the title and total stack instead of
+        // sharing a line they no longer fit on.
+        let header = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline))
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline) {
+            header {
                 Text("WHERE \(month.monthName.uppercased()) WENT")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(.footnote, weight: .bold))
                     .tracking(1)
-                Spacer()
+                if !typeSize.isAccessibilitySize { Spacer() }
                 Text(Money.whole(month.spent, month.currencyCode))
-                    .font(.figure(22))
+                    .figureFont(22)
                     .monospacedDigit()
                     .contentTransition(.numericText(value: (month.spent as NSDecimalNumber).doubleValue))
             }
@@ -44,12 +50,12 @@ struct WhereItWent: View {
                                    outlined: index == opacities.count - 1, radius: 3)
                                 .frame(width: 10, height: 10)
                             Text(share.name)
-                                .font(.system(size: 15))
+                                .font(.system(.subheadline))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.65)
                             Spacer(minLength: 4)
                             Text(Money.whole(share.amount, month.currencyCode))
-                                .font(.figure(16))
+                                .figureFont(16)
                                 .monospacedDigit()
                                 .contentTransition(.numericText())
                         }
@@ -115,30 +121,32 @@ private struct BillCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(bill.label)
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(.caption2, weight: .bold))
                 .tracking(0.8)
                 .foregroundStyle(bill.isSoon ? Palette.caution : Palette.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Text(bill.date)
-                .font(.figure(42, weight: .black))
+                .figureFont(42, weight: .black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .foregroundStyle(Palette.ink)
             Text(bill.name)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .padding(.top, 8)
             Text(Money.natural(bill.amount, bill.currencyCode))
-                .font(.system(size: 14))
+                .font(.system(.subheadline))
                 .monospacedDigit()
                 .foregroundStyle(Palette.secondary)
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.surface, in: .rect(cornerRadius: 20))
+        .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
         .overlay {
             if bill.isSoon {
-                RoundedRectangle(cornerRadius: 20).strokeBorder(Palette.cautionLine.opacity(0.55), lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: Radius.card).strokeBorder(Palette.cautionLine.opacity(0.55), lineWidth: 1.5)
             }
         }
         .accessibilityElement(children: .combine)

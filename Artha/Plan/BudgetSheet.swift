@@ -21,7 +21,7 @@ struct BudgetSheet: View {
                     .frame(minHeight: 44)
                 Spacer()
                 Text("Monthly budget")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Palette.ink)
                 Spacer()
                 Color.clear.frame(width: 52, height: 1)
@@ -31,7 +31,7 @@ struct BudgetSheet: View {
                 .padding(.top, 40)
 
             Text("for everything you spend in a month, bills included")
-                .font(.system(size: 14))
+                .font(.system(.subheadline))
                 .foregroundStyle(Palette.secondary)
                 .padding(.top, 6)
 
@@ -45,7 +45,7 @@ struct BudgetSheet: View {
 
             if let error {
                 Text(error)
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.caution)
                     .padding(.top, 14)
             }
@@ -54,7 +54,7 @@ struct BudgetSheet: View {
 
             if plan.cap != nil {
                 Button("Remove budget", role: .destructive) { save(nil) }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .frame(minHeight: 44)
                     .disabled(isSaving)
                     .padding(.bottom, 6)
@@ -68,7 +68,7 @@ struct BudgetSheet: View {
                         Text(plan.cap == nil ? "Set budget" : "Save")
                     }
                 }
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(.body, weight: .bold))
                 .frame(maxWidth: .infinity, minHeight: 58)
                 .background(Palette.inverse, in: Capsule())
                 .foregroundStyle(Palette.onInverse)

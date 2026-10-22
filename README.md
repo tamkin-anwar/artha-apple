@@ -21,6 +21,10 @@ Early build. Signs in to a real Artha account and shows Today from the Artha ser
 - **Tap Add.** Type an amount and what it was. Artha picks the category, and Today updates as soon as it saves.
 - **Pull down** on Today to refresh. It also refreshes whenever the app comes back to the foreground.
 
+## Design
+
+Artha's visual system, Daybreak, is written down in [Docs/Design.md](Docs/Design.md): the palette (shared value for value with the website), Dynamic Type everywhere, the three corner radii, what each color means, the layered app icon, and the checklist before calling a screen finished.
+
 ## Running it
 
 Open `Artha.xcodeproj` in Xcode, choose the **Artha** scheme and your iPhone, then Run. The project targets iOS 26 or later. Files added inside the `Artha/` folder are picked up by Xcode automatically.

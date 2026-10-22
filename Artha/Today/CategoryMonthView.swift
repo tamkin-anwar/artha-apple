@@ -16,12 +16,14 @@ struct CategoryMonthView: View {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(Money.cents(total, month.currencyCode))
-                        .font(.figure(40))
+                        .figureFont(40)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                         .monospacedDigit()
                         .foregroundStyle(Palette.ink)
                         .contentTransition(.numericText())
                     Text(subtitle)
-                        .font(.system(size: 15))
+                        .font(.system(.subheadline))
                         .foregroundStyle(Palette.secondary)
                 }
                 .padding(.vertical, 8)

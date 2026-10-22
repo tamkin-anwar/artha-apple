@@ -200,7 +200,7 @@ struct TwoFactorView: View {
                     Label(copied ? "Setup key copied" : "Copy setup key", systemImage: copied ? "checkmark" : "doc.on.doc")
                 }
                 Text(Self.grouped(setup.secret))
-                    .font(.system(size: 15, design: .monospaced))
+                    .font(.system(.subheadline, design: .monospaced))
                     .foregroundStyle(Palette.secondary)
                     .textSelection(.enabled)
             } header: {
@@ -235,7 +235,7 @@ struct TwoFactorView: View {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(codes, id: \.self) { code in
                     Text(code)
-                        .font(.system(size: 16, design: .monospaced))
+                        .font(.system(.callout, design: .monospaced))
                         .foregroundStyle(Palette.ink)
                 }
             }

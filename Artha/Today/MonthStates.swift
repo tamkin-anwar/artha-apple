@@ -80,21 +80,21 @@ private struct StateCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbol)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: 38, height: 38)
-                .background(Palette.raised, in: .rect(cornerRadius: 11))
+                .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Palette.ink)
                 Text(detail)
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let action {
                     Button(action, action: perform)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(Palette.accent)
                         .frame(minHeight: 36)
                 }
@@ -102,7 +102,7 @@ private struct StateCard: View {
             Spacer(minLength: 0)
         }
         .padding(16)
-        .background(Palette.surface, in: .rect(cornerRadius: 20))
+        .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
 }
@@ -114,11 +114,11 @@ struct FirstDay: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Let's find your safe to spend")
-                .font(.system(size: 30, weight: .bold))
+                .font(.system(.title, weight: .bold))
                 .tracking(-0.5)
                 .foregroundStyle(Palette.ink)
             Text("Two quick steps. After that, Artha does the math every day.")
-                .font(.system(size: 16))
+                .font(.system(.callout))
                 .foregroundStyle(Palette.secondary)
                 .padding(.top, 8)
 
@@ -130,42 +130,42 @@ struct FirstDay: View {
                 Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
                 StepRow(number: 2, title: "Add your first expense", detail: "Tap + below. It takes a few seconds")
             }
-            .background(Palette.surface, in: .rect(cornerRadius: 22))
+            .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             .padding(.top, 22)
 
             if ThisDevice.canAutomateApplePay {
             Button { session.isShowingApplePaySetup = true } label: {
                 HStack(spacing: 14) {
                     Image(systemName: "wave.3.right")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(Palette.accent)
                         .frame(width: 30, height: 30)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Optional: log Apple Pay on its own")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(.callout, weight: .semibold))
                             .foregroundStyle(Palette.ink)
                         Text("A one-time setup in Shortcuts. Then every tap to pay shows up here")
-                            .font(.system(size: 14))
+                            .font(.system(.subheadline))
                             .foregroundStyle(Palette.secondary)
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(.footnote, weight: .semibold))
                         .foregroundStyle(Palette.secondary)
                 }
                 .padding(16)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .background(Palette.surface, in: .rect(cornerRadius: 22))
+            .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             .padding(.top, 12)
             }
 
             VStack(spacing: 4) {
                 Text("Your month will draw itself here")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                 Text("starting with your first expense")
-                    .font(.system(size: 13))
+                    .font(.system(.footnote))
             }
             .foregroundStyle(Palette.secondary)
             .frame(maxWidth: .infinity, minHeight: 150)
@@ -193,16 +193,16 @@ private struct StepRow: View {
     var body: some View {
         HStack(spacing: 14) {
             Text("\(number)")
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(.footnote, weight: .bold))
                 .foregroundStyle(Palette.secondary)
                 .frame(width: 30, height: 30)
                 .overlay(Circle().strokeBorder(Palette.secondary.opacity(0.5), lineWidth: 2))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Palette.ink)
                 Text(detail)
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.secondary)
             }
             Spacer()

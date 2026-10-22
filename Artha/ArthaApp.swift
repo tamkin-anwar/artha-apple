@@ -200,7 +200,7 @@ struct MainTabs: View {
             HStack(spacing: 10) {
                 OrbMark().frame(width: 26, height: 26)
                 Text("Artha")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(.title3, weight: .bold))
                     .foregroundStyle(Palette.ink)
             }
             .padding(.vertical, 4)

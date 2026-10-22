@@ -66,29 +66,31 @@ struct ReviewSheet: View {
         ScrollView {
             VStack(spacing: 0) {
                 Text("\(position) of \(total)")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(.footnote, weight: .bold))
                     .tracking(0.8)
                     .monospacedDigit()
                     .foregroundStyle(Palette.secondary)
 
                 Image(systemName: CategoryStyle.symbol(for: tx.category, type: tx.type))
-                    .font(.system(size: 24, weight: .medium))
+                    .font(.system(.title2, weight: .medium))
                     .frame(width: 64, height: 64)
-                    .background(Palette.raised, in: .rect(cornerRadius: 19))
+                    .background(Palette.raised, in: .rect(cornerRadius: Radius.card))
                     .foregroundStyle(Palette.ink)
                     .padding(.top, 20)
                 Text(tx.description)
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.system(.title2, weight: .bold))
                     .foregroundStyle(Palette.ink)
                     .multilineTextAlignment(.center)
                     .padding(.top, 14)
                 Text(Money.cents(Decimal.api(tx.amount), tx.currency))
-                    .font(.figure(40))
+                    .figureFont(40)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .monospacedDigit()
                     .foregroundStyle(Palette.ink)
                     .padding(.top, 4)
                 Text(subtitle(for: tx))
-                    .font(.system(size: 15))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.secondary)
                     .padding(.top, 4)
 
@@ -96,7 +98,7 @@ struct ReviewSheet: View {
                     SectionLabel("Category")
                     if tx.category == nil {
                         Text("Artha couldn't tell what this was. Pick one and it'll know next time.")
-                            .font(.system(size: 14))
+                            .font(.system(.subheadline))
                             .foregroundStyle(Palette.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -107,7 +109,7 @@ struct ReviewSheet: View {
                                 choose(choice.key, for: tx)
                             } label: {
                                 Label(choice.label, systemImage: CategoryStyle.symbol(for: choice.key, type: tx.type))
-                                    .font(.system(size: 15, weight: selected ? .semibold : .regular))
+                                    .font(.system(.subheadline, weight: selected ? .semibold : .regular))
                                     .padding(.horizontal, 14)
                                     .frame(minHeight: 40)
                                     .background(selected ? Palette.inverse : Palette.surface, in: Capsule())
@@ -124,7 +126,7 @@ struct ReviewSheet: View {
 
                 if let error {
                     Text(error)
-                        .font(.system(size: 14))
+                        .font(.system(.subheadline))
                         .foregroundStyle(Palette.caution)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 14)
@@ -146,7 +148,7 @@ struct ReviewSheet: View {
                         Text("Looks right")
                     }
                 }
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(.body, weight: .bold))
                 .frame(maxWidth: .infinity, minHeight: 56)
                 .background(Palette.inverse, in: Capsule())
                 .foregroundStyle(Palette.onInverse)
@@ -166,10 +168,10 @@ struct ReviewSheet: View {
                 .foregroundStyle(Palette.good)
                 .symbolEffect(.bounce, value: index)
             Text("All caught up")
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(.title2, weight: .bold))
                 .foregroundStyle(Palette.ink)
             Text("New Apple Pay purchases will show up on Today for a look.")
-                .font(.system(size: 15))
+                .font(.system(.subheadline))
                 .foregroundStyle(Palette.secondary)
                 .multilineTextAlignment(.center)
         }

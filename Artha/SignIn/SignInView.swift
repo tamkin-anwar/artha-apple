@@ -24,11 +24,11 @@ struct SignInView: View {
                     .frame(width: 84, height: 84)
                     .padding(.top, 72)
                 Text("Artha")
-                    .font(.system(size: 34, weight: .bold))
+                    .font(.system(.largeTitle, weight: .bold))
                     .foregroundStyle(Palette.ink)
                     .padding(.top, 18)
                 Text(needsCode ? "Enter the code from your authenticator app." : "Sign in with your Artha account.")
-                    .font(.system(size: 16))
+                    .font(.system(.callout))
                     .foregroundStyle(Palette.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.top, 6)
@@ -62,12 +62,12 @@ struct SignInView: View {
                             .fieldStyle()
                     }
                 }
-                .background(Palette.surface, in: .rect(cornerRadius: 18))
+                .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
                 .padding(.top, 32)
 
                 if let error {
                     Text(error)
-                        .font(.system(size: 14))
+                        .font(.system(.subheadline))
                         .foregroundStyle(Palette.caution)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 4)
@@ -83,7 +83,7 @@ struct SignInView: View {
                             Text(needsCode ? "Verify" : "Sign in")
                         }
                     }
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(.body, weight: .bold))
                     .frame(maxWidth: .infinity, minHeight: 56)
                     .background(Palette.inverse, in: Capsule())
                     .foregroundStyle(Palette.onInverse)
@@ -99,7 +99,7 @@ struct SignInView: View {
                         code = ""
                         error = nil
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundStyle(Palette.accent)
                     .frame(minHeight: 44)
                     .padding(.top, 8)
@@ -112,7 +112,7 @@ struct SignInView: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(Palette.accent)
                     }
-                    .font(.system(size: 15))
+                    .font(.system(.subheadline))
                     .frame(minHeight: 44)
                     .padding(.top, 8)
                 }
@@ -172,7 +172,7 @@ struct SignInView: View {
 extension View {
     /// A row in the grouped field cards on Sign In and Sign Up.
     func fieldStyle() -> some View {
-        font(.system(size: 17))
+        font(.system(.body))
             .foregroundStyle(Palette.ink)
             // The rounded card around the fields is the border; without
             // this a Mac draws its own box inside it as well.

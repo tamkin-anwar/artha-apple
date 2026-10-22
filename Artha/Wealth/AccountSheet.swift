@@ -31,7 +31,7 @@ struct AccountSheet: View {
                     .frame(minHeight: 44)
                 Spacer()
                 Text(existing?.name ?? "New account")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                 Spacer()
@@ -42,7 +42,7 @@ struct AccountSheet: View {
                 .padding(.top, 30)
 
             Text(caption)
-                .font(.system(size: 14))
+                .font(.system(.subheadline))
                 .foregroundStyle(Palette.secondary)
                 .padding(.top, 6)
 
@@ -74,15 +74,15 @@ struct AccountSheet: View {
                     .labelsHidden()
                 }
             }
-            .font(.system(size: 16))
+            .font(.system(.callout))
             .tint(Palette.accent)
             .padding(.horizontal, 16)
-            .background(Palette.surface, in: .rect(cornerRadius: 20))
+            .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             .padding(.top, 28)
 
             if let error {
                 Text(error)
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.caution)
                     .padding(.top, 12)
             }
@@ -91,7 +91,7 @@ struct AccountSheet: View {
 
             if let existing {
                 Button("Delete account", role: .destructive) { confirmingDelete = true }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .frame(minHeight: 44)
                     .disabled(isSaving)
                     .padding(.bottom, 6)
@@ -111,7 +111,7 @@ struct AccountSheet: View {
                         Text(buttonTitle)
                     }
                 }
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(.body, weight: .bold))
                 .frame(maxWidth: .infinity, minHeight: 58)
                 .background(Palette.inverse, in: Capsule())
                 .foregroundStyle(Palette.onInverse)
@@ -270,7 +270,7 @@ struct ReviewBalancesSheet: View {
                     .frame(minHeight: 44)
                 Spacer()
                 Text("\(min(index + 1, accounts.count)) of \(accounts.count)")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(Palette.ink)
                     .contentTransition(.numericText())
@@ -284,15 +284,15 @@ struct ReviewBalancesSheet: View {
             if let account = current {
                 VStack(spacing: 6) {
                     Image(systemName: AccountStyle.symbol(for: account.type))
-                        .font(.system(size: 20, weight: .medium))
+                        .font(.system(.title3, weight: .medium))
                         .frame(width: 52, height: 52)
-                        .background(Palette.raised, in: .rect(cornerRadius: 16))
+                        .background(Palette.raised, in: .rect(cornerRadius: Radius.inner))
                         .foregroundStyle(Palette.ink)
                     Text(account.name)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(.title3, weight: .bold))
                         .foregroundStyle(Palette.ink)
                     Text("\(account.typeLabel) · \(AccountStyle.updatedLabel(days: account.daysSinceUpdate))")
-                        .font(.system(size: 14))
+                        .font(.system(.subheadline))
                         .foregroundStyle(Palette.secondary)
                 }
                 .padding(.top, 24)
@@ -303,14 +303,14 @@ struct ReviewBalancesSheet: View {
                     .padding(.top, 24)
 
                 Text(account.isLiability ? "owed right now" : "in this account right now")
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.secondary)
                     .padding(.top, 6)
             }
 
             if let error {
                 Text(error)
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.caution)
                     .padding(.top, 12)
             }
@@ -325,7 +325,7 @@ struct ReviewBalancesSheet: View {
                         Text(isUnchanged ? "Still right" : "Save")
                     }
                 }
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(.body, weight: .bold))
                 .frame(maxWidth: .infinity, minHeight: 58)
                 .background(Palette.inverse, in: Capsule())
                 .foregroundStyle(Palette.onInverse)

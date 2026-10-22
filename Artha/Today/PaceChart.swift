@@ -7,6 +7,7 @@ import SwiftUI
 /// budget there's no pace to draw, just the month's spending.
 struct PaceChart: View {
     @Environment(MonthModel.self) private var month
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var selectedDay: Int?
 
     private var lineColor: Color {
@@ -70,27 +71,48 @@ struct PaceChart: View {
         .animation(.snappy(duration: 0.45), value: month.spent)
         .frame(height: 230)
         .overlay(alignment: .topTrailing) {
-            if let budget = month.budget {
+            // At accessibility sizes this caption moves under the chart,
+            // where it can't collide with the day's label.
+            if let budget = month.budget, !typeSize.isAccessibilitySize {
                 VStack(alignment: .trailing, spacing: 0) {
                     Text("Even pace")
                     Text("to \(Money.whole(budget, month.currencyCode))")
                 }
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
                 .foregroundStyle(Palette.secondary)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 6) {
-            HStack {
-                Text("\(shortMonth) 1")
-                Spacer()
-                Text("\(shortMonth) \(month.daysInMonth)")
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("\(shortMonth) 1")
+                    Spacer()
+                    Text("\(shortMonth) \(month.daysInMonth)")
+                }
+                if let budget = month.budget, typeSize.isAccessibilitySize {
+                    Text("Dashed line: an even pace to \(Money.whole(budget, month.currencyCode))")
+                }
             }
-            .font(.system(size: 12))
+            .font(.system(.caption))
             .foregroundStyle(Palette.secondary)
         }
         .accessibilityElement()
         .accessibilityLabel("Spending this month")
         .accessibilityValue(accessibilityValue)
+        .accessibilityChartDescriptor(audioGraph)
+    }
+
+    /// The same line as an Audio Graph, with the even pace as a second
+    /// series when there's a budget.
+    private var audioGraph: AudioGraph {
+        let days = month.cumulative.map(\.day)
+        var series = [AudioGraph.Series(name: "Spent", values: month.cumulative.map(\.amount))]
+        if month.hasBudget {
+            series.append(.init(name: "Even pace", values: days.map { month.paceAmount(on: $0) ?? 0 }))
+        }
+        return AudioGraph(title: "Spending this month", summary: accessibilityValue,
+                          categoryTitle: "Day", categories: days.map { "\(shortMonth) \($0)" },
+                          valueTitle: "Spent", currencyCode: month.currencyCode, series: series)
     }
 
     private var shortMonth: String { String(month.monthName.prefix(3)) }
@@ -114,10 +136,10 @@ private struct ChartLabel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(isToday ? "Today, \(monthName.prefix(3)) \(day)" : "\(monthName.prefix(3)) \(day)")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(.caption2, weight: .semibold))
                 .foregroundStyle(Palette.secondary)
             Text("\(Money.whole(Decimal(amount), currencyCode)) spent")
-                .font(.figure(16))
+                .figureFont(16)
                 .monospacedDigit()
                 .foregroundStyle(Palette.ink)
         }
@@ -125,7 +147,7 @@ private struct ChartLabel: View {
         .padding(.vertical, 8)
         // Solid, not glass: the chart's lines showed through glass and ran
         // across the figures. Glass is for floating controls; this is a label.
-        .background(Palette.surface, in: .rect(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.ink.opacity(0.08), lineWidth: 1))
+        .background(Palette.surface, in: .rect(cornerRadius: Radius.inner))
+        .overlay(RoundedRectangle(cornerRadius: Radius.inner).strokeBorder(Palette.ink.opacity(0.08), lineWidth: 1))
     }
 }

@@ -106,12 +106,14 @@ private struct PlanCard: View {
                     SectionLabel("Budget")
                     Spacer()
                     Button("Edit") { session.isEditingBudget = true }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(Palette.accent)
                         .frame(minHeight: 32)
                 }
                 Text(Money.whole(cap, plan.currencyCode))
-                    .font(.figure(44))
+                    .figureFont(44)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .monospacedDigit()
                     .foregroundStyle(Palette.ink)
                     .contentTransition(.numericText(value: (cap as NSDecimalNumber).doubleValue))
@@ -144,7 +146,7 @@ private struct PlanCard: View {
             }
         }
         .padding(18)
-        .background(Palette.surface, in: .rect(cornerRadius: 24))
+        .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
         .animation(.snappy(duration: 0.45), value: plan.cap)
         .animation(.snappy(duration: 0.45), value: plan.left)
     }
@@ -165,11 +167,11 @@ private struct NoBudget: View {
         VStack(alignment: .leading, spacing: 0) {
             SectionLabel("Budget")
             Text("No monthly budget yet")
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(.title2, weight: .bold))
                 .foregroundStyle(Palette.ink)
                 .padding(.top, 8)
             Text(detail)
-                .font(.system(size: 15))
+                .font(.system(.subheadline))
                 .foregroundStyle(Palette.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 6)
@@ -246,15 +248,15 @@ private struct LegendRow: View {
                 .frame(width: 10, height: 10)
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
                     .foregroundStyle(Palette.ink)
                 Text(detail)
-                    .font(.system(size: 13))
+                    .font(.system(.footnote))
                     .foregroundStyle(Palette.secondary)
             }
             Spacer(minLength: 8)
             Text(Money.whole(amount, currencyCode))
-                .font(.figure(18, weight: .bold))
+                .figureFont(18, weight: .bold)
                 .monospacedDigit()
                 .foregroundStyle(emphasis)
                 .contentTransition(.numericText(value: (amount as NSDecimalNumber).doubleValue))
@@ -277,7 +279,7 @@ private struct BillsSection: View {
                 Spacer()
                 if plan.billsTotal > 0 {
                     Text(Money.whole(plan.billsTotal, plan.currencyCode))
-                        .font(.figure(17, weight: .bold))
+                        .figureFont(17, weight: .bold)
                         .monospacedDigit()
                         .foregroundStyle(Palette.ink)
                 }
@@ -286,12 +288,12 @@ private struct BillsSection: View {
 
             if plan.bills.isEmpty {
                 Text("Bills that repeat, like rent or a subscription, show up here with what's paid and what's still to come.")
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.surface, in: .rect(cornerRadius: 20))
+                    .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(plan.bills.enumerated()), id: \.element.id) { index, bill in
@@ -302,7 +304,7 @@ private struct BillsSection: View {
                     }
                 }
                 .padding(.horizontal, 14)
-                .background(Palette.surface, in: .rect(cornerRadius: 20))
+                .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             }
         }
     }
@@ -316,18 +318,18 @@ private struct BillRowView: View {
         HStack(spacing: 14) {
             VStack(spacing: 0) {
                 Text(bill.weekday)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(.caption2, weight: .bold))
                     .tracking(0.6)
                     .foregroundStyle(bill.isSoon ? Palette.caution : Palette.secondary)
                 Text(bill.day)
-                    .font(.figure(22, weight: .heavy))
+                    .figureFont(22, weight: .heavy)
                     .monospacedDigit()
                     .foregroundStyle(bill.isPaid ? Palette.secondary : Palette.ink)
             }
             .frame(width: 46)
             VStack(alignment: .leading, spacing: 2) {
                 Text(bill.name)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(.callout, weight: .medium))
                     .foregroundStyle(bill.isPaid ? Palette.secondary : Palette.ink)
                     .lineLimit(1)
                 HStack(spacing: 4) {
@@ -337,19 +339,19 @@ private struct BillRowView: View {
                     }
                     Text(bill.detail)
                 }
-                .font(.system(size: 13))
+                .font(.system(.footnote))
                 .foregroundStyle(Palette.secondary)
                 .lineLimit(1)
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
                 Text(Money.natural(bill.amount, bill.currencyCode))
-                    .font(.figure(16, weight: .bold))
+                    .figureFont(16, weight: .bold)
                     .monospacedDigit()
                     .foregroundStyle(bill.isPaid ? Palette.secondary : Palette.ink)
                 if let equivalent = bill.displayEquivalent {
                     Text("≈ \(Money.whole(equivalent, displayCurrency))")
-                        .font(.system(size: 12))
+                        .font(.system(.caption))
                         .foregroundStyle(Palette.secondary)
                 }
             }
@@ -373,7 +375,7 @@ private struct LimitsSection: View {
                 Spacer()
                 if !plan.limits.isEmpty, !plan.unbudgeted.isEmpty {
                     Button("Add", systemImage: "plus") { editingLimit = LimitTarget(limit: nil) }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(Palette.accent)
                         .frame(minHeight: 32)
                 }
@@ -383,7 +385,7 @@ private struct LimitsSection: View {
             if plan.limits.isEmpty {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Keep an eye on one category, like Dining, without budgeting every dollar. Artha tells you when it's getting close.")
-                        .font(.system(size: 14))
+                        .font(.system(.subheadline))
                         .foregroundStyle(Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Button("Add a limit") { editingLimit = LimitTarget(limit: nil) }
@@ -391,7 +393,7 @@ private struct LimitsSection: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.surface, in: .rect(cornerRadius: 20))
+                .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(plan.limits.enumerated()), id: \.element.key) { index, limit in
@@ -405,7 +407,7 @@ private struct LimitsSection: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .background(Palette.surface, in: .rect(cornerRadius: 20))
+                .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             }
         }
     }
@@ -437,16 +439,16 @@ private struct LimitRow: View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 12) {
                 Image(systemName: CategoryStyle.symbol(for: limit.key, type: "expense"))
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
                     .frame(width: 32, height: 32)
-                    .background(Palette.raised, in: .rect(cornerRadius: 10))
+                    .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
                     .foregroundStyle(Palette.ink)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(limit.label)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(.callout, weight: .medium))
                         .foregroundStyle(Palette.ink)
                     Text(detail)
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .monospacedDigit()
                         .foregroundStyle(Palette.secondary)
                 }
@@ -454,7 +456,7 @@ private struct LimitRow: View {
                 Text(limit.tier == "over"
                      ? "\(Money.whole(Decimal.api(limit.overBy), currencyCode)) over"
                      : "\(Money.whole(Decimal.api(limit.left), currencyCode)) left")
-                    .font(.figure(16, weight: .bold))
+                    .figureFont(16, weight: .bold)
                     .monospacedDigit()
                     .foregroundStyle(limit.tier == "over" ? Palette.caution : Palette.ink)
             }
@@ -496,9 +498,9 @@ private struct SuggestionsSection: View {
                 }
             }
             .padding(.horizontal, 16)
-            .background(Palette.surface, in: .rect(cornerRadius: 20))
+            .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             Text(error ?? "Tracked bills count in Safe to Spend before they're charged, and Artha adds each one when it's due.")
-                .font(.system(size: 13))
+                .font(.system(.footnote))
                 .foregroundStyle(error == nil ? Palette.secondary : Palette.caution)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 4)
@@ -509,17 +511,17 @@ private struct SuggestionsSection: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 Image(systemName: "repeat")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
                     .frame(width: 32, height: 32)
-                    .background(Palette.raised, in: .rect(cornerRadius: 10))
+                    .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
                     .foregroundStyle(Palette.ink)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(item.description)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(.callout, weight: .medium))
                         .foregroundStyle(Palette.ink)
                         .lineLimit(1)
                     Text("\(Money.natural(Decimal.api(item.amount), item.currency)) \(rhythm(item.interval)) · \(item.count) so far")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundStyle(Palette.secondary)
                 }
                 Spacer(minLength: 0)
@@ -575,7 +577,7 @@ private struct GoalsSection: View {
                 Spacer()
                 if !plan.goals.isEmpty {
                     Button("Add", systemImage: "plus") { editingGoal = GoalTarget(goal: nil) }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(Palette.accent)
                         .frame(minHeight: 32)
                 }
@@ -585,7 +587,7 @@ private struct GoalsSection: View {
             if plan.goals.isEmpty {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Saving for something? Add a goal and Artha shows how much to set aside each month to get there.")
-                        .font(.system(size: 14))
+                        .font(.system(.subheadline))
                         .foregroundStyle(Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Button("Add a goal") { editingGoal = GoalTarget(goal: nil) }
@@ -593,7 +595,7 @@ private struct GoalsSection: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.surface, in: .rect(cornerRadius: 20))
+                .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(plan.goals.enumerated()), id: \.element.id) { index, goal in
@@ -605,7 +607,7 @@ private struct GoalsSection: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .background(Palette.surface, in: .rect(cornerRadius: 20))
+                .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
             }
         }
     }
@@ -636,22 +638,22 @@ private struct GoalRow: View {
             Button(action: onEdit) {
                 HStack(spacing: 12) {
                     Image(systemName: isDone ? "checkmark.circle.fill" : "flag.fill")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                         .frame(width: 32, height: 32)
-                        .background(Palette.raised, in: .rect(cornerRadius: 10))
+                        .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
                         .foregroundStyle(isDone ? Palette.good : Palette.ink)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(goal.name)
-                            .font(.system(size: 16, weight: .medium))
+                            .font(.system(.callout, weight: .medium))
                             .foregroundStyle(Palette.ink)
                             .lineLimit(1)
                         Text(detail)
-                            .font(.system(size: 13))
+                            .font(.system(.footnote))
                             .foregroundStyle(isDone ? Palette.good : Palette.secondary)
                     }
                     Spacer(minLength: 8)
                     Text("\(goal.percent)%")
-                        .font(.figure(16, weight: .bold))
+                        .figureFont(16, weight: .bold)
                         .monospacedDigit()
                         .foregroundStyle(Palette.ink)
                 }
@@ -672,13 +674,13 @@ private struct GoalRow: View {
 
             HStack {
                 Text("\(Money.natural(Decimal.api(goal.saved), goal.currency)) of \(Money.natural(Decimal.api(goal.target), goal.currency))")
-                    .font(.system(size: 13))
+                    .font(.system(.footnote))
                     .monospacedDigit()
                     .foregroundStyle(Palette.secondary)
                 Spacer()
                 if !isDone {
                     Button("Add money", action: onFund)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(Palette.accent)
                         .frame(minHeight: 32)
                 }

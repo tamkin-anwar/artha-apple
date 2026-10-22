@@ -19,7 +19,7 @@ struct AmountField: View {
                 .focused(focus)
                 .accessibilityLabel("Amount")
         }
-        .font(.figure(size))
+        .figureFont(size)
         .monospacedDigit()
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
@@ -36,9 +36,9 @@ struct SuggestionChip: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                 Text(text)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
             }
             .padding(.horizontal, 14)
             .frame(minHeight: 36)

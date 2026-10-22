@@ -125,7 +125,7 @@ private struct NetWorthHero: View {
         VStack(alignment: .leading, spacing: 0) {
             SectionLabel("Net worth")
             Text(Money.whole(wealth.netWorth, wealth.currencyCode))
-                .font(.figure(64))
+                .figureFont(64)
                 .monospacedDigit()
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
@@ -136,12 +136,12 @@ private struct NetWorthHero: View {
             if let change = wealth.change {
                 HStack(spacing: 6) {
                     Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
-                        .font(.system(size: 12, weight: .heavy))
+                        .font(.system(.caption, weight: .heavy))
                     Text("\(Money.whole(abs(change), wealth.currencyCode)) \(wealth.changeLabel)")
                         .monospacedDigit()
                         .contentTransition(.numericText())
                 }
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundStyle(change >= 0 ? Palette.good : Palette.caution)
                 .padding(.top, 10)
                 .animation(.snappy(duration: 0.4), value: wealth.range)
@@ -165,9 +165,9 @@ private struct NetWorthChart: View {
         if points.count < 2 {
             VStack(spacing: 4) {
                 Text("Your trend starts here")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                 Text("Every balance you update adds a point to this line.")
-                    .font(.system(size: 13))
+                    .font(.system(.footnote))
             }
             .foregroundStyle(Palette.secondary)
             .frame(maxWidth: .infinity, minHeight: 150)
@@ -216,17 +216,17 @@ private struct NetWorthChart: View {
                                 overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(active.date.formatted(.dateTime.month(.abbreviated).day().year()))
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.system(.caption2, weight: .semibold))
                                 .foregroundStyle(Palette.secondary)
                             Text(Money.whole(Decimal(active.value), wealth.currencyCode))
-                                .font(.figure(16))
+                                .figureFont(16)
                                 .monospacedDigit()
                                 .foregroundStyle(Palette.ink)
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(Palette.surface, in: .rect(cornerRadius: 14))
-                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.ink.opacity(0.08), lineWidth: 1))
+                        .background(Palette.surface, in: .rect(cornerRadius: Radius.inner))
+                        .overlay(RoundedRectangle(cornerRadius: Radius.inner).strokeBorder(Palette.ink.opacity(0.08), lineWidth: 1))
                     }
             }
         }
@@ -241,6 +241,14 @@ private struct NetWorthChart: View {
         .accessibilityElement()
         .accessibilityLabel("Net worth over time")
         .accessibilityValue("\(Money.whole(Decimal(points.first?.value ?? 0), wealth.currencyCode)) to \(Money.whole(Decimal(points.last?.value ?? 0), wealth.currencyCode)) \(wealth.changeLabel)")
+        .accessibilityChartDescriptor(AudioGraph(
+            title: "Net worth over time",
+            summary: "\(Money.whole(Decimal(points.first?.value ?? 0), wealth.currencyCode)) to \(Money.whole(Decimal(points.last?.value ?? 0), wealth.currencyCode)) \(wealth.changeLabel)",
+            categoryTitle: "Date",
+            categories: points.map { $0.date.formatted(.dateTime.month(.abbreviated).day().year()) },
+            valueTitle: "Net worth",
+            currencyCode: wealth.currencyCode,
+            series: [.init(name: "Net worth", values: points.map(\.value))]))
     }
 
     /// The net worth on a dragged-to day: the last point on or before it.
@@ -292,7 +300,7 @@ private struct OwnedAndOwed: View {
             }
         }
         .padding(18)
-        .background(Palette.surface, in: .rect(cornerRadius: 22))
+        .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
         .animation(.snappy(duration: 0.45), value: wealth.assets)
         .animation(.snappy(duration: 0.45), value: wealth.liabilities)
     }
@@ -308,11 +316,13 @@ private struct OwnedAndOwed: View {
                 HStack(spacing: 6) {
                     RoundedRectangle(cornerRadius: 3).fill(swatch).frame(width: 10, height: 10)
                     Text(title)
-                        .font(.system(size: 14))
+                        .font(.system(.subheadline))
                         .foregroundStyle(Palette.secondary)
                 }
                 Text(Money.whole(amount, currencyCode))
-                    .font(.figure(22, weight: .bold))
+                    .figureFont(22, weight: .bold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .monospacedDigit()
                     .foregroundStyle(Palette.ink)
                     .contentTransition(.numericText(value: (amount as NSDecimalNumber).doubleValue))
@@ -332,27 +342,27 @@ private struct StaleCard: View {
         let count = session.wealth.staleAccounts.count
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
                 .foregroundStyle(Palette.caution)
                 .frame(width: 38, height: 38)
-                .background(Palette.raised, in: .rect(cornerRadius: 11))
+                .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
             VStack(alignment: .leading, spacing: 3) {
                 Text(count == 1 ? "1 balance is over a month old" : "\(count) balances are over a month old")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Palette.ink)
                 Text("A quick check keeps your net worth honest. Confirming one takes a tap.")
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Button("Review balances", action: review)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundStyle(Palette.accent)
                     .frame(minHeight: 36)
             }
             Spacer(minLength: 0)
         }
         .padding(16)
-        .background(Palette.surface, in: .rect(cornerRadius: 20))
+        .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
     }
 }
 
@@ -369,7 +379,7 @@ private struct AccountGroupView: View {
                 SectionLabel(group.title)
                 Spacer()
                 Text(Money.whole(group.total, currencyCode))
-                    .font(.figure(17, weight: .bold))
+                    .figureFont(17, weight: .bold)
                     .monospacedDigit()
                     .foregroundStyle(Palette.ink)
             }
@@ -387,7 +397,7 @@ private struct AccountGroupView: View {
                 }
             }
             .padding(.horizontal, 14)
-            .background(Palette.surface, in: .rect(cornerRadius: 20))
+            .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
         }
     }
 }
@@ -401,13 +411,13 @@ private struct AccountRow: View {
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: AccountStyle.symbol(for: account.type))
-                .font(.system(size: 16, weight: .medium))
+                .font(.system(.callout, weight: .medium))
                 .frame(width: 40, height: 40)
-                .background(Palette.raised, in: .rect(cornerRadius: 12))
+                .background(Palette.raised, in: .rect(cornerRadius: Radius.inner))
                 .foregroundStyle(Palette.ink)
             VStack(alignment: .leading, spacing: 2) {
                 Text(account.name)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(.callout, weight: .medium))
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                 HStack(spacing: 4) {
@@ -417,18 +427,18 @@ private struct AccountRow: View {
                     Text("\(account.typeLabel) · \(AccountStyle.updatedLabel(days: account.daysSinceUpdate))")
                         .lineLimit(1)
                 }
-                .font(.system(size: 13))
+                .font(.system(.footnote))
                 .foregroundStyle(isStale ? Palette.caution : Palette.secondary)
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
                 Text(Money.natural(Decimal.api(account.balance), account.currency))
-                    .font(.figure(17, weight: .bold))
+                    .figureFont(17, weight: .bold)
                     .monospacedDigit()
                     .foregroundStyle(Palette.ink)
                 if let equivalent = account.displayBalance {
                     Text("≈ \(Money.whole(Decimal.api(equivalent), displayCurrency))")
-                        .font(.system(size: 12))
+                        .font(.system(.caption))
                         .foregroundStyle(Palette.secondary)
                 }
             }
@@ -455,11 +465,11 @@ private struct EmptyWealth: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("See everything you own and owe")
-                .font(.system(size: 30, weight: .bold))
+                .font(.system(.title, weight: .bold))
                 .tracking(-0.5)
                 .foregroundStyle(Palette.ink)
             Text("Add each account once and update a balance whenever you like. Artha adds them up into your net worth and draws it over time, in any currency. No bank logins, so nothing breaks.")
-                .font(.system(size: 16))
+                .font(.system(.callout))
                 .foregroundStyle(Palette.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 10)
@@ -469,19 +479,19 @@ private struct EmptyWealth: View {
                     Button { sheet = .add(starter.type) } label: {
                         HStack(spacing: 10) {
                             Image(systemName: AccountStyle.symbol(for: starter.type))
-                                .font(.system(size: 15, weight: .medium))
+                                .font(.system(.subheadline, weight: .medium))
                                 .frame(width: 34, height: 34)
-                                .background(Palette.raised, in: .rect(cornerRadius: 10))
+                                .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
                             Text(starter.label)
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.system(.subheadline, weight: .semibold))
                             Spacer(minLength: 0)
                             Image(systemName: "plus")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.system(.footnote, weight: .bold))
                                 .foregroundStyle(Palette.accent)
                         }
                         .foregroundStyle(Palette.ink)
                         .padding(12)
-                        .background(Palette.surface, in: .rect(cornerRadius: 16))
+                        .background(Palette.surface, in: .rect(cornerRadius: Radius.inner))
                     }
                     .buttonStyle(.plain)
                 }

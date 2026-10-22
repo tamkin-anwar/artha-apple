@@ -127,7 +127,7 @@ struct ActivityView: View {
                         SectionLabel(day.title)
                         if day.isUpcoming {
                             Text("SCHEDULED")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(.caption2, weight: .bold))
                                 .tracking(0.8)
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
@@ -137,7 +137,7 @@ struct ActivityView: View {
                         Spacer(minLength: 8)
                         if day.spent > 0 {
                             Text(Money.cents(day.spent, activity.currencyCode))
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(.footnote, weight: .semibold))
                                 .monospacedDigit()
                                 .foregroundStyle(Palette.secondary)
                                 .accessibilityLabel("\(Money.cents(day.spent, activity.currencyCode)) spent")
@@ -232,14 +232,14 @@ struct UndoToast: View {
             if let tx = activity.pendingDelete {
                 HStack(spacing: 12) {
                     Text(tx.isRecurring ? "Deleted \(tx.description) and stopped it repeating" : "Deleted \(tx.description)")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                         .foregroundStyle(Palette.ink)
                         .lineLimit(1)
                     Spacer(minLength: 4)
                     Button("Undo") {
                         withAnimation(.snappy) { activity.undoDelete() }
                     }
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(.subheadline, weight: .bold))
                     .foregroundStyle(Palette.accent)
                     .frame(minWidth: 44, minHeight: 44)
                 }

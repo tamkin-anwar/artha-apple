@@ -23,7 +23,7 @@ struct AddSheet: View {
         VStack(spacing: 0) {
             HStack {
                 Button("Cancel") { dismiss() }
-                    .font(.system(size: 16))
+                    .font(.system(.callout))
                     .foregroundStyle(Palette.secondary)
                     .frame(minHeight: 44)
                 Spacer()
@@ -47,7 +47,7 @@ struct AddSheet: View {
                         .focused($focus, equals: .amount)
                         .accessibilityLabel("Amount")
                 }
-                .font(.figure(76))
+                .figureFont(76)
                 .monospacedDigit()
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
@@ -55,7 +55,7 @@ struct AddSheet: View {
                 .contentShape(Rectangle())
                 .onTapGesture { focus = .amount }
                 Text(month.currencyCode)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.footnote, weight: .semibold))
                     .padding(.horizontal, 12)
                     .frame(height: 32)
                     .background(Palette.raised, in: Capsule())
@@ -64,11 +64,11 @@ struct AddSheet: View {
             .padding(.top, 36)
 
             TextField(kind == .expense ? "What was it? (Blue Bottle Coffee)" : "Where's it from? (Salary)", text: $description)
-                .font(.system(size: 17))
+                .font(.system(.body))
                 .foregroundStyle(Palette.ink)
                 .padding(.horizontal, 16)
                 .frame(minHeight: 54)
-                .background(Palette.surface, in: .rect(cornerRadius: 18))
+                .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
                 .focused($focus, equals: .description)
                 .submitLabel(.done)
                 .onSubmit(save)
@@ -77,7 +77,7 @@ struct AddSheet: View {
             Text(kind == .expense
                  ? "Artha sorts it into a category for you, and remembers what you change."
                  : "Counts toward this month's income.")
-                .font(.system(size: 13))
+                .font(.system(.footnote))
                 .foregroundStyle(Palette.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
@@ -85,7 +85,7 @@ struct AddSheet: View {
 
             if let error {
                 Text(error)
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.caution)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
@@ -99,7 +99,7 @@ struct AddSheet: View {
             if month.applePay == nil, ThisDevice.canAutomateApplePay {
                 Button { showingApplePaySetup = true } label: {
                     Label("Paid with Apple Pay? Log it automatically", systemImage: "wave.3.right")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(Palette.accent)
                         .frame(minHeight: 44)
                 }
@@ -114,7 +114,7 @@ struct AddSheet: View {
                         Text(amount.map { "Add \(Money.cents($0, month.currencyCode))" } ?? "Add")
                     }
                 }
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(.body, weight: .bold))
                 .frame(maxWidth: .infinity, minHeight: 58)
                 .background(Palette.inverse, in: Capsule())
                 .foregroundStyle(Palette.onInverse)

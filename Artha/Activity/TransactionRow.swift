@@ -7,32 +7,34 @@ struct TransactionRow: View {
     let expense: MonthModel.Expense
     let displayCurrency: String
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: expense.symbol)
-                .font(.system(size: 17, weight: .medium))
+                .font(.system(.body, weight: .medium))
                 .frame(width: 40, height: 40)
-                .background(Palette.raised, in: .rect(cornerRadius: 12))
+                .background(Palette.raised, in: .rect(cornerRadius: Radius.inner))
                 .foregroundStyle(Palette.ink)
             VStack(alignment: .leading, spacing: 2) {
                 Text(expense.merchant)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(.callout, weight: .medium))
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
+                    .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
                 Text(expense.detail)
-                    .font(.system(size: 13))
+                    .font(.system(.footnote))
                     .foregroundStyle(Palette.secondary)
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
                 Text((expense.isIncome ? "+" : "") + Money.cents(expense.amount, expense.currencyCode))
-                    .font(.figure(17, weight: .bold))
+                    .figureFont(17, weight: .bold)
                     .monospacedDigit()
                     .foregroundStyle(expense.isIncome ? Palette.good : Palette.ink)
                 if let equivalent = expense.displayEquivalent {
                     Text("≈ \(Money.cents(equivalent, displayCurrency))")
-                        .font(.system(size: 12))
+                        .font(.system(.caption))
                         .foregroundStyle(Palette.secondary)
                 }
             }

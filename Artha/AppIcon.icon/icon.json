@@ -1,0 +1,122 @@
+{
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "srgb:0.09804,0.17647,0.39216,1.00000",
+          "srgb:0.03922,0.05490,0.11765,1.00000"
+        ]
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.09804,0.17647,0.39216,1.00000",
+          "srgb:0.03922,0.05490,0.11765,1.00000"
+        ]
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "Sun",
+      "layers": [
+        {
+          "name": "sun",
+          "image-name": "sun.svg",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "srgb:0.96078,0.70980,0.26667,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "srgb:0.96078,0.70980,0.26667,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "lighting": "individual",
+      "shadow": {
+        "kind": "layer-color",
+        "opacity": 0.5
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.45
+      }
+    },
+    {
+      "name": "Planet",
+      "layers": [
+        {
+          "name": "planet",
+          "image-name": "planet.svg",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "srgb:0.30980,0.51765,0.83922,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "srgb:0.30980,0.51765,0.83922,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:0.70000,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "lighting": "individual",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.2
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

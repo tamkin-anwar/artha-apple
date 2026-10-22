@@ -51,7 +51,7 @@ struct MonthByMonth: View {
                             currency: history.currency)
             }
             .padding(18)
-            .background(Palette.surface, in: .rect(cornerRadius: 22))
+            .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
         }
         .animation(.snappy(duration: 0.3), value: shown.month)
     }
@@ -73,29 +73,29 @@ struct MonthByMonth: View {
         VStack(alignment: .leading, spacing: 4) {
             if let average {
                 Text("You usually spend \(Money.whole(average, currency)) a month")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(.title3, weight: .bold))
                     .foregroundStyle(Palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 if let current, current.isCurrent {
                     Text(paceLine(current, average: average, currency: currency))
-                        .font(.system(size: 15))
+                        .font(.system(.subheadline))
                         .foregroundStyle(Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             } else if (plan.history?.months.count ?? 0) > 1 {
                 Text("Your first full month is underway")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(.title3, weight: .bold))
                     .foregroundStyle(Palette.ink)
                 Text("When it ends, Artha shows what you usually spend, and how each month compares.")
-                    .font(.system(size: 15))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 Text("Your first month with Artha")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(.title3, weight: .bold))
                     .foregroundStyle(Palette.ink)
                 Text("Each month you finish adds a bar here, so you can see how they compare.")
-                    .font(.system(size: 15))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -153,7 +153,7 @@ struct MonthByMonth: View {
                 AxisValueLabel {
                     if let label = value.as(String.self) {
                         Text(label)
-                            .font(.system(size: 12, weight: label == shown.label ? .bold : .regular))
+                            .font(.system(.caption, weight: label == shown.label ? .bold : .regular))
                             .foregroundStyle(label == shown.label ? Palette.ink : Palette.secondary)
                     }
                 }
@@ -213,7 +213,7 @@ private struct LegendItem<Swatch: View>: View {
         HStack(spacing: 6) {
             swatch
             Text(title)
-                .font(.system(size: 12))
+                .font(.system(.caption))
                 .foregroundStyle(Palette.secondary)
         }
     }
@@ -232,7 +232,7 @@ private struct MonthDetail: View {
         let income = Decimal.api(month.income)
         VStack(alignment: .leading, spacing: 14) {
             Text(title)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
                 .foregroundStyle(Palette.ink)
 
             HStack(alignment: .top, spacing: 0) {
@@ -263,7 +263,7 @@ private struct MonthDetail: View {
                 }
             } else {
                 Text("Nothing spent yet.")
-                    .font(.system(size: 14))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.secondary)
             }
         }
@@ -288,10 +288,10 @@ private struct Figure: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.system(size: 12))
+                .font(.system(.caption))
                 .foregroundStyle(Palette.secondary)
             Text(value)
-                .font(.figure(18))
+                .figureFont(18)
                 .monospacedDigit()
                 .foregroundStyle(tint)
                 .contentTransition(.numericText())
@@ -312,23 +312,23 @@ private struct CategoryLine: View {
         let amount = Decimal.api(category.amount)
         HStack(spacing: 12) {
             Image(systemName: CategoryStyle.symbol(for: category.key, type: "expense"))
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(.footnote, weight: .medium))
                 .frame(width: 30, height: 30)
-                .background(Palette.raised, in: .rect(cornerRadius: 9))
+                .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
                 .foregroundStyle(Palette.ink)
             VStack(alignment: .leading, spacing: 1) {
                 Text(category.label)
-                    .font(.system(size: 15))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Palette.ink)
                 if let change {
                     Text(change)
-                        .font(.system(size: 12))
+                        .font(.system(.caption))
                         .foregroundStyle(Palette.secondary)
                 }
             }
             Spacer(minLength: 8)
             Text(Money.whole(amount, currency))
-                .font(.figure(15))
+                .figureFont(15)
                 .monospacedDigit()
                 .foregroundStyle(Palette.ink)
         }

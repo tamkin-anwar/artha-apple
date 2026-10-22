@@ -80,8 +80,69 @@ extension Color {
 extension Font {
     /// Figures are SF Rounded, the face Apple uses for the big numbers in
     /// Fitness and Health: friendly, native, and nothing like Corres's serif.
+    /// Fixed size: for widgets and anywhere Dynamic Type can't apply. In the
+    /// app, use `.figureFont(_:weight:)`, which scales with the person's
+    /// text size.
     static func figure(_ size: CGFloat, weight: Font.Weight = .heavy) -> Font {
         .system(size: size, weight: weight, design: .rounded)
+    }
+}
+
+/// Corner radii: three, all continuous, so every surface reads as one
+/// family (Corres uses the same 22 for its surfaces). `card` for anything
+/// that sits on the ground (cards, lists, sheets' inner panels), `inner`
+/// for a control or tile inside a card, `small` for icon tiles and chips.
+nonisolated enum Radius {
+    static let card: CGFloat = 22
+    static let inner: CGFloat = 14
+    static let small: CGFloat = 10
+}
+
+/// A figure at its designed size, scaled with Dynamic Type the way body
+/// text scales (Apple's body sizes, xSmall 14 to AX5 53, over the default
+/// 17). Big display figures grow less, so a hero number stays one line on
+/// a phone at the largest text sizes; small ones grow fully.
+nonisolated enum FigureScale {
+    static func factor(for size: DynamicTypeSize) -> CGFloat {
+        let body: CGFloat = switch size {
+        case .xSmall: 14
+        case .small: 15
+        case .medium: 16
+        case .large: 17
+        case .xLarge: 19
+        case .xxLarge: 21
+        case .xxxLarge: 23
+        case .accessibility1: 28
+        case .accessibility2: 33
+        case .accessibility3: 40
+        case .accessibility4: 47
+        case .accessibility5: 53
+        @unknown default: 17
+        }
+        return body / 17
+    }
+
+    static func scaled(_ size: CGFloat, for typeSize: DynamicTypeSize) -> CGFloat {
+        let factor = factor(for: typeSize)
+        let cap: CGFloat = size >= 40 ? 1.3 : size >= 24 ? 1.7 : 3.2
+        return (size * min(factor, cap)).rounded()
+    }
+}
+
+private struct FigureFont: ViewModifier {
+    let size: CGFloat
+    let weight: Font.Weight
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    func body(content: Content) -> some View {
+        content.font(.system(size: FigureScale.scaled(size, for: typeSize), weight: weight, design: .rounded))
+    }
+}
+
+extension View {
+    /// SF Rounded money figures that scale with Dynamic Type.
+    func figureFont(_ size: CGFloat, weight: Font.Weight = .heavy) -> some View {
+        modifier(FigureFont(size: size, weight: weight))
     }
 }
 

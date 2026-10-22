@@ -24,7 +24,7 @@ struct DeleteAccountView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("Delete your account")
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.system(.title, weight: .bold))
                         .tracking(-0.4)
                         .foregroundStyle(Palette.ink)
 
@@ -32,11 +32,11 @@ struct DeleteAccountView: View {
                         ForEach(points, id: \.symbol) { point in
                             HStack(alignment: .top, spacing: 12) {
                                 Image(systemName: point.symbol)
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.system(.subheadline, weight: .semibold))
                                     .foregroundStyle(Palette.secondary)
                                     .frame(width: 22)
                                 Text(point.text)
-                                    .font(.system(size: 16))
+                                    .font(.system(.callout))
                                     .foregroundStyle(Palette.ink)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -50,17 +50,17 @@ struct DeleteAccountView: View {
                         .submitLabel(.done)
                         .onSubmit(submit)
                         .fieldStyle()
-                        .background(Palette.surface, in: .rect(cornerRadius: 18))
+                        .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
                         .padding(.top, 28)
                     Text("Enter your password to confirm.")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundStyle(Palette.secondary)
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
 
                     if let error {
                         Text(error)
-                            .font(.system(size: 14))
+                            .font(.system(.subheadline))
                             .foregroundStyle(Palette.caution)
                             .padding(.horizontal, 4)
                             .padding(.top, 14)
@@ -75,7 +75,7 @@ struct DeleteAccountView: View {
                                 Text("Delete account")
                             }
                         }
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.system(.body, weight: .bold))
                         .frame(maxWidth: .infinity, minHeight: 56)
                         .background(Color.red, in: Capsule())
                         .foregroundStyle(.white)
