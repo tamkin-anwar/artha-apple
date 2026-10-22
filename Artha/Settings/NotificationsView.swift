@@ -39,7 +39,7 @@ struct NotificationsView: View {
                     .tint(Palette.secondary)
                 } footer: {
                     if let error {
-                        Text(error).foregroundStyle(Palette.caution)
+                        Text(error).foregroundStyle(Palette.caution).announcedWhenShown(error)
                     } else {
                         Text("A bill reminder comes the day before it's due. Budget alerts come once a month per budget, the moment it's reached. The bill and budget settings and the time also apply on arthaapp.com.")
                     }

@@ -73,6 +73,10 @@ The app icon is an Icon Composer document (`Artha/AppIcon.icon`) holding two dra
 - Every screen works at the largest accessibility text size: rows wrap instead of truncating where they can, and hero figures shrink to fit rather than clip.
 - Charts carry an accessibility label that says what they show in words, and an Audio Graph (`AudioGraph`, or Swift Charts' own where each mark is labeled) that VoiceOver plays as sound.
 - Every custom control has a label, rows combine into one VoiceOver element, and status is never color alone (a capsule always has words and a symbol).
+- Movement goes through `.motionTransition(...)` (`Layout/Accessibility.swift`), which becomes a plain fade with Reduce Motion on. Number rolls and chart redraws are state changes, not movement, and stay.
+- Text that appears away from the person's focus (an error under a form, the undo bar) uses `.announcedWhenShown(...)`, so VoiceOver reads it the moment it shows up.
+- Secondary, accent, good, caution and cautionLine have high-contrast pairs in the asset catalog for Increase Contrast. A new text or status color gets one too.
+- At accessibility text sizes, a row that puts words beside a figure stacks them instead (`AnyLayout`, see `TransactionRow`), and a figure never wraps mid-number: `lineLimit(1)` with a `minimumScaleFactor`.
 
 ## Before calling a screen finished
 

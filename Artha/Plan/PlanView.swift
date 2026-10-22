@@ -234,9 +234,14 @@ private struct LegendRow: View {
     let amount: Decimal
     let currencyCode: String
     var emphasis: Color = Palette.ink
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        HStack(spacing: 12) {
+        // Stacked at accessibility sizes so the amount never breaks
+        // mid-number and "Everyday spending" never hyphenates.
+        let isLarge = typeSize.isAccessibilitySize
+        let layout = isLarge ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(spacing: 12))
+        layout {
             RoundedRectangle(cornerRadius: 3, style: .continuous)
                 .fill(swatch.color)
                 .overlay {
@@ -254,13 +259,16 @@ private struct LegendRow: View {
                     .font(.system(.footnote))
                     .foregroundStyle(Palette.secondary)
             }
-            Spacer(minLength: 8)
+            if !isLarge { Spacer(minLength: 8) }
             Text(Money.whole(amount, currencyCode))
                 .figureFont(18, weight: .bold)
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .foregroundStyle(emphasis)
                 .contentTransition(.numericText(value: (amount as NSDecimalNumber).doubleValue))
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 9)
         .accessibilityElement(children: .combine)
     }
@@ -311,11 +319,14 @@ private struct BillsSection: View {
 }
 
 private struct BillRowView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let bill: PlanModel.BillRow
     let displayCurrency: String
 
     var body: some View {
-        HStack(spacing: 14) {
+        let isLarge = typeSize.isAccessibilitySize
+        let layout = isLarge ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6)) : AnyLayout(HStackLayout(spacing: 14))
+        layout {
             VStack(spacing: 0) {
                 Text(bill.weekday)
                     .font(.system(.caption2, weight: .bold))
@@ -326,12 +337,12 @@ private struct BillRowView: View {
                     .monospacedDigit()
                     .foregroundStyle(bill.isPaid ? Palette.secondary : Palette.ink)
             }
-            .frame(width: 46)
+            .frame(width: isLarge ? nil : 46, alignment: isLarge ? .leading : .center)
             VStack(alignment: .leading, spacing: 2) {
                 Text(bill.name)
                     .font(.system(.callout, weight: .medium))
                     .foregroundStyle(bill.isPaid ? Palette.secondary : Palette.ink)
-                    .lineLimit(1)
+                    .lineLimit(isLarge ? 3 : 1)
                 HStack(spacing: 4) {
                     if bill.isPaid {
                         Image(systemName: "checkmark.circle.fill")
@@ -341,13 +352,15 @@ private struct BillRowView: View {
                 }
                 .font(.system(.footnote))
                 .foregroundStyle(Palette.secondary)
-                .lineLimit(1)
+                .lineLimit(isLarge ? 3 : 1)
             }
-            Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 2) {
+            if !isLarge { Spacer(minLength: 8) }
+            VStack(alignment: isLarge ? .leading : .trailing, spacing: 2) {
                 Text(Money.natural(bill.amount, bill.currencyCode))
                     .figureFont(16, weight: .bold)
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(bill.isPaid ? Palette.secondary : Palette.ink)
                 if let equivalent = bill.displayEquivalent {
                     Text("≈ \(Money.whole(equivalent, displayCurrency))")
@@ -356,6 +369,7 @@ private struct BillRowView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 11)
         .accessibilityElement(children: .combine)
     }

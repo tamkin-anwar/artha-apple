@@ -10,27 +10,37 @@ struct TransactionRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: expense.symbol)
-                .font(.system(.body, weight: .medium))
-                .frame(width: 40, height: 40)
-                .background(Palette.raised, in: .rect(cornerRadius: Radius.inner))
-                .foregroundStyle(Palette.ink)
+        // At accessibility sizes a side-by-side row leaves the amount a
+        // sliver and it breaks mid-number ("$6.7" / "5"), so the row stacks:
+        // name and detail, then the amount on its own line, and the symbol
+        // tile steps aside to give the words the width.
+        let isLarge = typeSize.isAccessibilitySize
+        let layout = isLarge ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6)) : AnyLayout(HStackLayout(spacing: 14))
+        layout {
+            if !isLarge {
+                Image(systemName: expense.symbol)
+                    .font(.system(.body, weight: .medium))
+                    .frame(width: 40, height: 40)
+                    .background(Palette.raised, in: .rect(cornerRadius: Radius.inner))
+                    .foregroundStyle(Palette.ink)
+            }
             VStack(alignment: .leading, spacing: 2) {
                 Text(expense.merchant)
                     .font(.system(.callout, weight: .medium))
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
+                    .lineLimit(isLarge ? 4 : 1)
                 Text(expense.detail)
                     .font(.system(.footnote))
                     .foregroundStyle(Palette.secondary)
-                    .lineLimit(1)
+                    .lineLimit(isLarge ? 3 : 1)
             }
-            Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 2) {
+            if !isLarge { Spacer(minLength: 8) }
+            VStack(alignment: isLarge ? .leading : .trailing, spacing: 2) {
                 Text((expense.isIncome ? "+" : "") + Money.cents(expense.amount, expense.currencyCode))
                     .figureFont(17, weight: .bold)
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(expense.isIncome ? Palette.good : Palette.ink)
                 if let equivalent = expense.displayEquivalent {
                     Text("≈ \(Money.cents(equivalent, displayCurrency))")

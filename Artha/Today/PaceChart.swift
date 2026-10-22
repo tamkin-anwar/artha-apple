@@ -32,7 +32,7 @@ struct PaceChart: View {
                     LineMark(x: .value("Day", day),
                              y: .value("Amount", month.paceAmount(on: day) ?? 0),
                              series: .value("Line", "Even pace"))
-                        .foregroundStyle(Palette.secondary.opacity(0.55))
+                        .foregroundStyle(Palette.secondary.opacity(0.75))
                         .lineStyle(StrokeStyle(lineWidth: 1.5, lineCap: .round, dash: [3, 5]))
                 }
             }

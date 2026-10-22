@@ -81,6 +81,7 @@ struct AccountSheet: View {
                     .font(.system(.subheadline))
                     .foregroundStyle(Palette.caution)
                     .padding(.top, 12)
+                    .announcedWhenShown(error)
             }
 
             Spacer(minLength: 16)
@@ -293,7 +294,7 @@ struct ReviewBalancesSheet: View {
                 }
                 .padding(.top, 24)
                 .id(account.id)
-                .transition(.push(from: .trailing))
+                .motionTransition(.push(from: .trailing))
 
                 AmountField(text: $text, currencyCode: account.currency, size: 60, focus: $focused)
                     .padding(.top, 24)
@@ -309,6 +310,7 @@ struct ReviewBalancesSheet: View {
                     .font(.system(.subheadline))
                     .foregroundStyle(Palette.caution)
                     .padding(.top, 12)
+                    .announcedWhenShown(error)
             }
 
             Spacer(minLength: 16)

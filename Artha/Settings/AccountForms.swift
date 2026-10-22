@@ -339,7 +339,7 @@ private struct FormFooter: View {
 
     var body: some View {
         if let error {
-            Text(error).foregroundStyle(Palette.caution)
+            Text(error).foregroundStyle(Palette.caution).announcedWhenShown(error)
         } else if let note {
             Text(note)
         }

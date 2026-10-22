@@ -53,6 +53,9 @@ struct SettingsView: View {
             VStack(spacing: 10) {
                 Text(user.initials)
                     .font(.system(.title2, weight: .semibold))
+                    // The name is right below; the circle can't grow with it.
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                    .accessibilityHidden(true)
                     .frame(width: 72, height: 72)
                     .background(Palette.raised, in: Circle())
                     .foregroundStyle(Palette.ink)
@@ -132,7 +135,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var moneyNote: some View {
         if let currencyError {
-            Text(currencyError).foregroundStyle(Palette.caution)
+            Text(currencyError).foregroundStyle(Palette.caution).announcedWhenShown(currencyError)
         } else {
             Text("Totals, budgets and Safe to Spend show in this currency. Each purchase keeps the currency it was paid in. The time zone follows your \(ThisDevice.name).")
                 .fixedSize(horizontal: false, vertical: true)

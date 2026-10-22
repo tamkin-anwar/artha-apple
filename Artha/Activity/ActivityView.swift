@@ -5,6 +5,7 @@ import SwiftUI
 /// history, not just what's loaded. Swipe to delete (with a few seconds to
 /// undo), tap to edit.
 struct ActivityView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(AppSession.self) private var session
     @Environment(\.scenePhase) private var scenePhase
     @State private var path: [Int] = []
@@ -123,7 +124,12 @@ struct ActivityView: View {
                         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                     }
                 } header: {
-                    HStack(spacing: 8) {
+                    // Stacked at accessibility sizes so a long day name
+                    // ("Yesterday") never hyphenates against its total.
+                    let headerLayout = typeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                        : AnyLayout(HStackLayout(spacing: 8))
+                    headerLayout {
                         SectionLabel(day.title)
                         if day.isUpcoming {
                             Text("SCHEDULED")
@@ -134,7 +140,7 @@ struct ActivityView: View {
                                 .background(Palette.raised, in: Capsule())
                                 .foregroundStyle(Palette.secondary)
                         }
-                        Spacer(minLength: 8)
+                        if !typeSize.isAccessibilitySize { Spacer(minLength: 8) }
                         if day.spent > 0 {
                             Text(Money.cents(day.spent, activity.currencyCode))
                                 .font(.system(.footnote, weight: .semibold))
@@ -225,16 +231,19 @@ struct ActivityView: View {
 /// transaction can be opened and deleted from there.
 struct UndoToast: View {
     @Environment(AppSession.self) private var session
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         let activity = session.activity
         ZStack {
             if let tx = activity.pendingDelete {
                 HStack(spacing: 12) {
-                    Text(tx.isRecurring ? "Deleted \(tx.description) and stopped it repeating" : "Deleted \(tx.description)")
+                    let message = tx.isRecurring ? "Deleted \(tx.description) and stopped it repeating" : "Deleted \(tx.description)"
+                    Text(message)
                         .font(.system(.subheadline, weight: .medium))
                         .foregroundStyle(Palette.ink)
-                        .lineLimit(1)
+                        .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
+                        .announcedWhenShown(message)
                     Spacer(minLength: 4)
                     Button("Undo") {
                         withAnimation(.snappy) { activity.undoDelete() }
@@ -249,7 +258,7 @@ struct UndoToast: View {
                 .glassEffect(.regular, in: .capsule)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .motionTransition(.move(edge: .bottom).combined(with: .opacity))
                 .accessibilityElement(children: .combine)
                 .accessibilityAction(named: "Undo") { activity.undoDelete() }
             }

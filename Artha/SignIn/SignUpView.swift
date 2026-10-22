@@ -106,6 +106,7 @@ struct SignUpView: View {
                             .font(.system(.subheadline))
                             .foregroundStyle(Palette.caution)
                             .padding(.horizontal, 4)
+                            .announcedWhenShown(error)
                             .padding(.top, 16)
                             .transition(.opacity)
                     }

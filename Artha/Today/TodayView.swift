@@ -89,6 +89,7 @@ struct TodayView: View {
         } else {
             if let error = session.refreshError {
                 Label(error, systemImage: "wifi.exclamationmark")
+                    .announcedWhenShown(error)
                     .font(.system(.footnote, weight: .medium))
                     .foregroundStyle(Palette.caution)
                     .padding(.horizontal, 20)
@@ -177,6 +178,9 @@ private struct TodayHeader: View {
             Button(action: openAccountSettings) {
                 Text(session.user?.initials ?? "")
                     .font(.system(.subheadline, weight: .semibold))
+                    // Decoration in a fixed circle (the button is labeled
+                    // Settings): past this size the letters can't fit.
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .frame(width: 44, height: 44)
                     .background(Palette.raised, in: Circle())
                     .foregroundStyle(Palette.ink)

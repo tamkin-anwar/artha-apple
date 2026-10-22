@@ -63,6 +63,7 @@ struct DeleteAccountView: View {
                             .font(.system(.subheadline))
                             .foregroundStyle(Palette.caution)
                             .padding(.horizontal, 4)
+                            .announcedWhenShown(error)
                             .padding(.top, 14)
                             .transition(.opacity)
                     }

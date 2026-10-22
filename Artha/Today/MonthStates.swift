@@ -103,7 +103,7 @@ private struct StateCard: View {
         }
         .padding(16)
         .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
-        .transition(.opacity.combined(with: .move(edge: .top)))
+        .motionTransition(.opacity.combined(with: .move(edge: .top)))
     }
 }
 

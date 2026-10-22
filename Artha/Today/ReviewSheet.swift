@@ -23,7 +23,7 @@ struct ReviewSheet: View {
                     if index < queue.count {
                         card(queue[index], position: index + 1, of: queue.count)
                             .id(queue[index].id)
-                            .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                            .motionTransition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
                                                     removal: .move(edge: .leading).combined(with: .opacity)))
                     } else {
                         done
@@ -129,6 +129,7 @@ struct ReviewSheet: View {
                         .font(.system(.subheadline))
                         .foregroundStyle(Palette.caution)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .announcedWhenShown(error)
                         .padding(.top, 14)
                 }
             }

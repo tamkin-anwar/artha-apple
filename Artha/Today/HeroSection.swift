@@ -4,6 +4,7 @@ import SwiftUI
 /// each person can lead with the number they care about.
 struct HeroSection: View {
     @Environment(MonthModel.self) private var month
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         @Bindable var month = month
@@ -38,7 +39,12 @@ struct HeroSection: View {
                 .animation(.snappy(duration: 0.5), value: month.heroValue)
                 .padding(.top, 2)
 
-            HStack(spacing: 10) {
+            // Side by side, the badge gets squeezed to "On…" at accessibility
+            // sizes, so there the sentence goes under it.
+            let statusLayout = typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                : AnyLayout(HStackLayout(spacing: 10))
+            statusLayout {
                 if month.hasBudget && month.heroMetric != .netWorth {
                     StatusBadge(status: month.status, overBy: month.overBy, currencyCode: month.currencyCode)
                 }

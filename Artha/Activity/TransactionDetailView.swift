@@ -125,7 +125,7 @@ struct TransactionDetailView: View {
                         Text("Artha will file \(description.isEmpty ? tx.description : description) here from now on.")
                     }
                     if let error {
-                        Text(error).foregroundStyle(Palette.caution)
+                        Text(error).foregroundStyle(Palette.caution).announcedWhenShown(error)
                     }
                 }
                 .font(.system(.footnote))

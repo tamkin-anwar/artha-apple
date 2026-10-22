@@ -177,12 +177,13 @@ final class AppSession {
         if planShown { await updateReminders() }
     }
 
-    func addTransaction(description: String, amount: Decimal, type: String) async throws {
+    /// `currency` is the one it was paid in; nil means the display currency.
+    func addTransaction(description: String, amount: Decimal, type: String, currency: String? = nil) async throws {
         let body: [String: Any] = [
             "description": description,
             "amount": NSDecimalNumber(decimal: amount).stringValue,
             "type": type,
-            "currency": month.currencyCode,
+            "currency": currency ?? month.currencyCode,
         ]
         let _: TransactionEnvelope = try await api.post("transactions", body: body)
         month.noteAdded()

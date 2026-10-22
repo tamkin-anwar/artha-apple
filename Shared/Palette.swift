@@ -12,7 +12,9 @@ import AppKit
 /// The light and dark values live in `Shared/Palette.xcassets` (one color
 /// set per token, compiled into the app and the widgets; the comment on
 /// each line repeats them, light / dark, to keep them in step with the
-/// website's style.css). Asset-catalog colors resolve against SwiftUI's own
+/// website's style.css). Secondary, accent, good, caution and cautionLine
+/// also carry a stronger high-contrast pair that iOS switches to with
+/// Settings > Accessibility > Display > Increase Contrast. Asset-catalog colors resolve against SwiftUI's own
 /// color scheme the moment it changes, where a UIColor trait closure lags a
 /// layout pass behind (Corres hit that as cards staying the old color after
 /// switching Appearance).

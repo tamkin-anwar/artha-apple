@@ -48,6 +48,7 @@ struct BudgetSheet: View {
                     .font(.system(.subheadline))
                     .foregroundStyle(Palette.caution)
                     .padding(.top, 14)
+                    .announcedWhenShown(error)
             }
 
             Spacer(minLength: 20)

@@ -165,7 +165,7 @@ struct RecentList: View {
                     TransactionRow(expense: expense, displayCurrency: month.currencyCode)
                 }
                 .buttonStyle(.plain)
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .motionTransition(.move(edge: .top).combined(with: .opacity))
                 if index < month.recent.count - 1 {
                     Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
                 }

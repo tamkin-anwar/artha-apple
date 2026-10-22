@@ -70,6 +70,7 @@ struct SignInView: View {
                         .font(.system(.subheadline))
                         .foregroundStyle(Palette.caution)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .announcedWhenShown(error)
                         .padding(.horizontal, 4)
                         .padding(.top, 12)
                         .transition(.opacity)
