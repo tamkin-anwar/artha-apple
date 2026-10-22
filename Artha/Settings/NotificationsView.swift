@@ -23,8 +23,10 @@ struct NotificationsView: View {
                     Toggle(isOn: binding(\.notifyBudgetAlerts, key: "notify_budget_alerts", user: user)) {
                         Label("Over budget", systemImage: "exclamationmark.circle")
                     }
-                    Toggle(isOn: $applePay) {
-                        Label("Apple Pay purchases", systemImage: "wave.3.right")
+                    if ThisDevice.canAutomateApplePay {
+                        Toggle(isOn: $applePay) {
+                            Label("Apple Pay purchases", systemImage: "wave.3.right")
+                        }
                     }
                     Picker(selection: hourBinding(user)) {
                         ForEach(0..<24, id: \.self) { hour in
@@ -47,13 +49,13 @@ struct NotificationsView: View {
             }
             Section {
             } footer: {
-                Text("Notifications are made on this iPhone from numbers it already has, so no notification service sees your money.")
+                Text("Notifications are made on this \(ThisDevice.name) from numbers it already has, so no notification service sees your money.")
             }
         }
         .scrollContentBackground(.hidden)
         .background(Palette.ground)
         .navigationTitle("Notifications")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineTitle()
         .task { status = await Reminders.status() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { status = await Reminders.status() } }
@@ -69,10 +71,10 @@ struct NotificationsView: View {
         switch status {
         case .denied:
             Section {
-                Text("Notifications are off for Artha in your iPhone's Settings.")
+                Text("Notifications are off for Artha in your \(ThisDevice.name)'s settings.")
                     .foregroundStyle(Palette.ink)
-                Button("Open iPhone Settings") {
-                    if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
+                Button(ThisDevice.name == "Mac" ? "Open System Settings" : "Open \(ThisDevice.name) Settings") {
+                    if let url = SystemSettings.notificationsURL { openURL(url) }
                 }
             }
             .listRowBackground(Palette.surface)

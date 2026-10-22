@@ -24,9 +24,9 @@ struct ProfileView: View {
             Section {
                 TextField("Email", text: $email)
                     .textContentType(.emailAddress)
-                    .keyboardType(.emailAddress)
+                    .keyboard(.email)
                     .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
+                    .noAutocapitalization()
             } footer: {
                 FormFooter(error: error, note: "Password resets and the deletion email go here.")
             }
@@ -35,7 +35,7 @@ struct ProfileView: View {
         .scrollContentBackground(.hidden)
         .background(Palette.ground)
         .navigationTitle("Name and email")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineTitle()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 SaveButton(isSaving: isSaving, enabled: changes.isEmpty == false, action: save)
@@ -103,7 +103,7 @@ struct PasswordView: View {
         .scrollContentBackground(.hidden)
         .background(Palette.ground)
         .navigationTitle("Password")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineTitle()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 SaveButton(isSaving: isSaving, enabled: !current.isEmpty && new.count >= 8, action: save)
@@ -161,7 +161,7 @@ struct TwoFactorView: View {
         .scrollContentBackground(.hidden)
         .background(Palette.ground)
         .navigationTitle("Two-factor sign-in")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineTitle()
         .sensoryFeedback(.error, trigger: error) { _, value in value != nil }
         .sensoryFeedback(.success, trigger: recoveryCodes != nil)
         .animation(.snappy(duration: 0.3), value: setup?.secret)
@@ -172,7 +172,7 @@ struct TwoFactorView: View {
 
     private var introSection: some View {
         Section {
-            Text("Signing in will also ask for a six-digit code from your phone, so a stolen password alone can't get in. The Passwords app on your iPhone can hold the code and fill it in for you.")
+            Text("Signing in will also ask for a six-digit code from your phone, so a stolen password alone can't get in. The Passwords app on your \(ThisDevice.name) can hold the code and fill it in for you.")
                 .foregroundStyle(Palette.ink)
                 .padding(.vertical, 4)
             Button(action: start) {
@@ -194,7 +194,7 @@ struct TwoFactorView: View {
                     Label("Add to Passwords", systemImage: "key.viewfinder")
                 }
                 Button {
-                    UIPasteboard.general.string = setup.secret
+                    Clipboard.copy(setup.secret)
                     copied = true
                 } label: {
                     Label(copied ? "Setup key copied" : "Copy setup key", systemImage: copied ? "checkmark" : "doc.on.doc")
@@ -206,14 +206,14 @@ struct TwoFactorView: View {
             } header: {
                 Text("1. Add Artha to an authenticator")
             } footer: {
-                Text("Add to Passwords opens your iPhone's Passwords app, or another authenticator if you use one. You can also paste the setup key into it.")
+                Text("Add to Passwords opens your \(ThisDevice.name)'s Passwords app, or another authenticator if you use one. You can also paste the setup key into it.")
             }
             .listRowBackground(Palette.surface)
 
             Section {
                 TextField("6-digit code", text: $code)
                     .textContentType(.oneTimeCode)
-                    .keyboardType(.numberPad)
+                    .keyboard(.number)
                 Button(action: confirm) {
                     ProgressLabel(title: "Turn on", isWorking: isWorking)
                 }
@@ -242,7 +242,7 @@ struct TwoFactorView: View {
             .padding(.vertical, 6)
             .textSelection(.enabled)
             Button {
-                UIPasteboard.general.string = codes.joined(separator: "\n")
+                Clipboard.copy(codes.joined(separator: "\n"))
                 copied = true
             } label: {
                 Label(copied ? "Codes copied" : "Copy codes", systemImage: copied ? "checkmark" : "doc.on.doc")
@@ -267,7 +267,7 @@ struct TwoFactorView: View {
             TextField("Code or recovery code", text: $code)
                 .textContentType(.oneTimeCode)
                 .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
             Button(role: .destructive, action: turnOff) {
                 ProgressLabel(title: "Turn off", isWorking: isWorking)
             }

@@ -19,6 +19,20 @@ nonisolated enum Keychain {
         return group
     }
 
+    /// On a Mac, the same modern Keychain iPhone uses (with the same
+    /// access rules), rather than the older file-based one a Mac uses by
+    /// default. Builds without a signing identity can't use it, so those
+    /// fall back to the older one.
+    private static func modern(_ query: [String: Any]) -> [String: Any] {
+        #if os(macOS)
+        var query = query
+        query[kSecUseDataProtectionKeychain as String] = true
+        return query
+        #else
+        return query
+        #endif
+    }
+
     static func save(_ value: String, account: String) {
         delete(account: account)
         var query: [String: Any] = [
@@ -28,6 +42,9 @@ nonisolated enum Keychain {
             kSecValueData as String: Data(value.utf8),
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
         ]
+        #if os(macOS)
+        if SecItemAdd(modern(query) as CFDictionary, nil) == errSecSuccess { return }
+        #endif
         if let group = sharedGroup {
             query[kSecAttrAccessGroup as String] = group
             if SecItemAdd(query as CFDictionary, nil) == errSecSuccess { return }
@@ -49,6 +66,11 @@ nonisolated enum Keychain {
             kSecMatchLimit as String: kSecMatchLimitOne,
         ]
         var item: CFTypeRef?
+        #if os(macOS)
+        if SecItemCopyMatching(modern(query) as CFDictionary, &item) == errSecSuccess, let data = item as? Data {
+            return String(data: data, encoding: .utf8)
+        }
+        #endif
         guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
               let data = item as? Data else { return nil }
         return String(data: data, encoding: .utf8)
@@ -61,6 +83,9 @@ nonisolated enum Keychain {
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
         ]
+        #if os(macOS)
+        SecItemDelete(modern(query) as CFDictionary)
+        #endif
         SecItemDelete(query as CFDictionary)
     }
 

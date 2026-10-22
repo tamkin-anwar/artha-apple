@@ -43,7 +43,7 @@ struct CategoryMonthView: View {
         .scrollContentBackground(.hidden)
         .background(Palette.ground)
         .navigationTitle(route.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineTitle()
         .overlay {
             if transactions == nil {
                 if let error {

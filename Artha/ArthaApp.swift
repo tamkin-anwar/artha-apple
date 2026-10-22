@@ -1,25 +1,65 @@
+#if os(iOS)
 import BackgroundTasks
+#endif
 import SwiftUI
 import UserNotifications
 
 @main
 struct ArthaApp: App {
+    #if os(iOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #else
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #endif
     @State private var session = AppSession()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
+        #if os(iOS)
+        mainWindow
+            // Keeps bill reminders and budget alerts current while the app
+            // is closed: iOS wakes it now and then (more often for people
+            // who open it often) to refresh the numbers.
+            .backgroundTask(.appRefresh(BackgroundRefresh.identifier)) {
+                BackgroundRefresh.schedule()
+                await session.backgroundRefresh()
+            }
+        #else
+        mainWindow
+            .defaultSize(width: 1240, height: 860)
+            .windowResizability(.contentMinSize)
+        // Command-comma, the Mac's own place for settings.
+        Settings {
+            SettingsView()
+                .environment(session)
+                .environment(session.month)
+                .frame(width: 540, height: 720)
+        }
+        #endif
+    }
+
+    private var mainWindow: some Scene {
         WindowGroup {
             RootView()
                 .environment(session)
                 .environment(session.month)
                 .onOpenURL { session.open($0) }
                 .task { appDelegate.session = session }
+                #if os(macOS)
+                .frame(minWidth: 760, minHeight: 600)
+                // Artha's cards and rows are the borders; without this every
+                // Mac text field draws its own box inside them too. (iPhone
+                // and iPad fields are already plain.)
+                .textFieldStyle(.plain)
+                #endif
         }
         .onChange(of: scenePhase) { _, phase in
+            #if os(iOS)
             if phase == .background { BackgroundRefresh.schedule() }
+            #endif
         }
-        // For iPads with a keyboard: hold Command to see these.
+        // Hold Command on an iPad keyboard to see these; on a Mac they're
+        // in the menu bar.
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Add Transaction") { session.route = .add }
@@ -31,18 +71,16 @@ struct ArthaApp: App {
                 Button("Activity") { session.route = .activity }.keyboardShortcut("2")
                 Button("Plan") { session.route = .plan }.keyboardShortcut("3")
                 Button("Wealth") { session.route = .wealth }.keyboardShortcut("4")
+                Divider()
+                Button("Refresh") { Task { await session.refreshEverythingNow() } }
+                    .keyboardShortcut("r")
+                    .disabled(session.phase != .signedIn)
             }
-        }
-        // Keeps bill reminders and budget alerts current while the app is
-        // closed: iOS wakes it now and then (more often for people who open
-        // it often) to refresh the numbers.
-        .backgroundTask(.appRefresh(BackgroundRefresh.identifier)) {
-            BackgroundRefresh.schedule()
-            await session.backgroundRefresh()
         }
     }
 }
 
+#if os(iOS)
 /// The background refresh Artha asks iOS for: no sooner than every few
 /// hours; iOS picks the real moment.
 nonisolated enum BackgroundRefresh {
@@ -54,17 +92,12 @@ nonisolated enum BackgroundRefresh {
         try? BGTaskScheduler.shared.submit(request)
     }
 }
+#endif
 
 /// Shows Artha's notifications while the app is open too, and opens the
 /// right tab when one is tapped.
-final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+final class AppDelegate: NSObject, UNUserNotificationCenterDelegate {
     var session: AppSession?
-
-    func application(_ application: UIApplication,
-                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        UNUserNotificationCenter.current().delegate = self
-        return true
-    }
 
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification)
         async -> UNNotificationPresentationOptions {
@@ -78,6 +111,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         }
     }
 }
+
+#if os(iOS)
+extension AppDelegate: UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+}
+#else
+extension AppDelegate: NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        UNUserNotificationCenter.current().delegate = self
+    }
+
+    /// Closing the last window quits, the way single-window Mac apps do.
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+}
+#endif
 
 /// Signed in or not, and keeping Today fresh: it refreshes whenever the
 /// app comes back to the foreground, since a purchase made on the web (or
@@ -153,7 +205,7 @@ struct MainTabs: View {
             }
             .padding(.vertical, 4)
         }
-        .tabBarMinimizeBehavior(.onScrollDown)
+        .minimizeTabBarOnScroll()
         .onChange(of: selection) { previous, current in
             if current == .add {
                 selection = previous

@@ -46,7 +46,7 @@ struct PlanView: View {
             .navigationTitle(plan.monthName.isEmpty ? "Plan" : "\(plan.monthName) plan")
             // On iPad the floating tab bar sits where an inline title
             // would, so the title goes large, under it.
-            .toolbarTitleDisplayMode(width >= WideLayout.twoColumnWidth ? .large : .inlineLarge)
+            .screenTitleStyle(large: width >= WideLayout.twoColumnWidth)
         }
         .task { if plan.summary == nil { await plan.load() } }
         .sheet(item: $editingLimit) { target in

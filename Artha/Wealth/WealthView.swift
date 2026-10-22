@@ -62,10 +62,10 @@ struct WealthView: View {
             .navigationTitle("Wealth")
             // On iPad the floating tab bar sits where an inline title
             // would, so the title goes large, under it.
-            .toolbarTitleDisplayMode(width >= WideLayout.twoColumnWidth ? .large : .inlineLarge)
+            .screenTitleStyle(large: width >= WideLayout.twoColumnWidth)
             .toolbar {
                 if wealth.hasAccounts {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .primaryAction) {
                         Button("Add account", systemImage: "plus") { sheet = .add("checking") }
                     }
                 }
@@ -260,6 +260,7 @@ private struct RangePicker: View {
             ForEach(WealthModel.Range.allCases) { Text($0.rawValue).tag($0) }
         }
         .pickerStyle(.segmented)
+        .labelsHidden()
         .sensoryFeedback(.selection, trigger: wealth.range)
     }
 }

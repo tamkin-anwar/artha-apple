@@ -22,6 +22,9 @@ struct ActivityView: View {
                 // side by side, the way Mail and Notes work.
                 NavigationSplitView {
                     searchableList
+                        // Without a width the list collapses on a Mac,
+                        // where it sits beside the window's own sidebar.
+                        .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 480)
                 } detail: {
                     NavigationStack {
                         if let id = selectedID, session.activity.transaction(id: id) != nil {
@@ -75,10 +78,10 @@ struct ActivityView: View {
         @Bindable var activity = session.activity
         return list
             .navigationTitle("Activity")
-            .searchable(text: $activity.query, placement: .navigationBarDrawer(displayMode: .always),
+            .searchable(text: $activity.query, placement: .alwaysVisible,
                         prompt: "Search transactions")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Picker("Show", selection: $activity.filter) {
                             ForEach(ActivityModel.Filter.allCases) { Text($0.rawValue).tag($0) }
@@ -108,6 +111,7 @@ struct ActivityView: View {
                             TransactionRow(expense: .init(tx, detail: Self.detail(for: tx)),
                                            displayCurrency: activity.currencyCode)
                         }
+                        .buttonStyle(.plain)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button("Delete", systemImage: "trash", role: .destructive) {
                                 withAnimation(.snappy) { activity.delete(tx) }

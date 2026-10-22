@@ -30,11 +30,14 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background(Palette.ground)
             .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineTitle()
             .toolbar {
+                // A Mac Settings window closes with its own button.
+                #if os(iOS)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
+                #endif
             }
         }
         .task { await session.refreshUser() }
@@ -111,16 +114,30 @@ struct SettingsView: View {
                     .foregroundStyle(Palette.secondary)
                     .lineLimit(1)
             }
+            // A Mac shows list footers on one line, so the note is a row there.
+            #if os(macOS)
+            moneyNote
+                .font(.callout)
+                .foregroundStyle(Palette.secondary)
+            #endif
         } header: {
             Text("Money")
         } footer: {
-            if let currencyError {
-                Text(currencyError).foregroundStyle(Palette.caution)
-            } else {
-                Text("Totals, budgets and Safe to Spend show in this currency. Each purchase keeps the currency it was paid in. The time zone follows your iPhone.")
-            }
+            #if os(iOS)
+            moneyNote
+            #endif
         }
         .listRowBackground(Palette.surface)
+    }
+
+    @ViewBuilder
+    private var moneyNote: some View {
+        if let currencyError {
+            Text(currencyError).foregroundStyle(Palette.caution)
+        } else {
+            Text("Totals, budgets and Safe to Spend show in this currency. Each purchase keeps the currency it was paid in. The time zone follows your \(ThisDevice.name).")
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var applePay: some View {
@@ -130,6 +147,7 @@ struct SettingsView: View {
             } label: {
                 SettingsRow(symbol: "bell", title: "Notifications")
             }
+            if ThisDevice.canAutomateApplePay {
             Button { showingApplePay = true } label: {
                 HStack {
                     SettingsRow(symbol: "wave.3.right", title: "Apple Pay logging")
@@ -142,6 +160,7 @@ struct SettingsView: View {
                 }
             }
             .buttonStyle(.plain)
+            }
         }
         .listRowBackground(Palette.surface)
     }

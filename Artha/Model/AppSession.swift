@@ -1,6 +1,9 @@
 import Foundation
 import Observation
 import WidgetKit
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Whether this device is signed in, who to, and the calls that change
 /// that. Owns the API client and every screen's model.
@@ -269,6 +272,12 @@ final class AppSession {
         try? await updateProfile(["timezone": here])
     }
 
+    /// Command-R: every screen, now, even if it was just refreshed.
+    func refreshEverythingNow() async {
+        guard phase == .signedIn else { return }
+        await refreshEverything()
+    }
+
     /// Every screen at once, e.g. after the display currency changes.
     private func refreshEverything() async {
         async let today: Void = refresh()
@@ -370,11 +379,14 @@ final class AppSession {
         phase = .signedOut
     }
 
+    /// How this device appears in the account's list of signed-in devices.
     private var deviceName: String {
-        #if targetEnvironment(simulator)
-        "iPhone Simulator"
+        #if os(macOS)
+        "Mac"
+        #elseif targetEnvironment(simulator)
+        UIDevice.current.userInterfaceIdiom == .pad ? "iPad Simulator" : "iPhone Simulator"
         #else
-        "iPhone"
+        UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
         #endif
     }
 }

@@ -22,12 +22,13 @@ nonisolated enum APIError: Error, Sendable {
 }
 
 /// Talks to the Artha server's /api/v1 with the signed-in device's bearer
-/// token. In the simulator that's the local dev server (the Mac's own
-/// localhost); on a real iPhone it's arthaapp.com.
+/// token. In the simulator, and in a debug build of the Mac app (both run
+/// on the development Mac), that's the local dev server; on a real iPhone
+/// or iPad, and in the Mac app people download, it's arthaapp.com.
 @MainActor
 final class APIClient {
     static let baseURL: URL = {
-        #if targetEnvironment(simulator)
+        #if targetEnvironment(simulator) || (os(macOS) && DEBUG)
         URL(string: "http://localhost:5050/api/v1/")!
         #else
         URL(string: "https://arthaapp.com/api/v1/")!

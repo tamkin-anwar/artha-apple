@@ -41,7 +41,7 @@ struct SignUpView: View {
                     VStack(spacing: 0) {
                         TextField("First name", text: $firstName)
                             .textContentType(.givenName)
-                            .textInputAutocapitalization(.words)
+                            .capitalizeWords()
                             .focused($focus, equals: .firstName)
                             .submitLabel(.next)
                             .onSubmit { focus = .email }
@@ -49,9 +49,9 @@ struct SignUpView: View {
                         Divider().padding(.leading, 16)
                         TextField("Email", text: $email)
                             .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
+                            .keyboard(.email)
                             .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
+                            .noAutocapitalization()
                             .focused($focus, equals: .email)
                             .submitLabel(.next)
                             .onSubmit { focus = .username }
@@ -60,7 +60,7 @@ struct SignUpView: View {
                         TextField("Username", text: $username)
                             .textContentType(.username)
                             .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
+                            .noAutocapitalization()
                             .focused($focus, equals: .username)
                             .submitLabel(.next)
                             .onSubmit { focus = .password }
@@ -143,6 +143,8 @@ struct SignUpView: View {
                         .padding(.top, 8)
                 }
                 .padding(.horizontal, 24)
+                .frame(maxWidth: 520)
+                .frame(maxWidth: .infinity)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
                 .animation(.snappy(duration: 0.3), value: error)

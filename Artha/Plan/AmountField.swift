@@ -13,7 +13,7 @@ struct AmountField: View {
             Text(Money.symbol(for: currencyCode))
                 .foregroundStyle(text.isEmpty ? Palette.secondary.opacity(0.5) : Palette.secondary)
             TextField("0", text: $text)
-                .keyboardType(.decimalPad)
+                .keyboard(.decimal)
                 .foregroundStyle(Palette.ink)
                 .fixedSize()
                 .focused(focus)

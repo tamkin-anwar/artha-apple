@@ -41,7 +41,7 @@ struct AddSheet: View {
                     Text(Money.symbol(for: month.currencyCode))
                         .foregroundStyle(amountText.isEmpty ? Palette.secondary.opacity(0.5) : Palette.ink)
                     TextField("0.00", text: $amountText)
-                        .keyboardType(.decimalPad)
+                        .keyboard(.decimal)
                         .foregroundStyle(Palette.ink)
                         .fixedSize()
                         .focused($focus, equals: .amount)
@@ -96,7 +96,7 @@ struct AddSheet: View {
 
             // Only until Apple Pay has logged something on its own: after
             // that it's set up, and the link would just be clutter here.
-            if month.applePay == nil {
+            if month.applePay == nil, ThisDevice.canAutomateApplePay {
                 Button { showingApplePaySetup = true } label: {
                     Label("Paid with Apple Pay? Log it automatically", systemImage: "wave.3.right")
                         .font(.system(size: 14, weight: .semibold))

@@ -117,6 +117,7 @@ struct FirstDay: View {
             .background(Palette.surface, in: .rect(cornerRadius: 22))
             .padding(.top, 22)
 
+            if ThisDevice.canAutomateApplePay {
             Button { session.isShowingApplePaySetup = true } label: {
                 HStack(spacing: 14) {
                     Image(systemName: "wave.3.right")
@@ -142,6 +143,7 @@ struct FirstDay: View {
             .buttonStyle(.plain)
             .background(Palette.surface, in: .rect(cornerRadius: 22))
             .padding(.top, 12)
+            }
 
             VStack(spacing: 4) {
                 Text("Your month will draw itself here")

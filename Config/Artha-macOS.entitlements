@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The Mac app runs sandboxed (required for the Mac App Store) and
+	     only needs to reach Artha's own server. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- Saved arthaapp.com passwords fill in here too. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>webcredentials:arthaapp.com</string>
+	</array>
+	<!-- Widgets aren't on the Mac yet, so the sign-in key stays in the
+	     app's own Keychain group. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)studio.anwarcreative.artha</string>
+	</array>
+</dict>
+</plist>

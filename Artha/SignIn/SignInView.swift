@@ -37,9 +37,9 @@ struct SignInView: View {
                     if needsCode {
                         TextField("6-digit code or recovery code", text: $code)
                             .textContentType(.oneTimeCode)
-                            .keyboardType(.asciiCapable)
+                            .keyboard(.ascii)
                             .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
+                            .noAutocapitalization()
                             .focused($focus, equals: .code)
                             .submitLabel(.go)
                             .onSubmit(submit)
@@ -48,7 +48,7 @@ struct SignInView: View {
                         TextField("Username", text: $username)
                             .textContentType(.username)
                             .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
+                            .noAutocapitalization()
                             .focused($focus, equals: .username)
                             .submitLabel(.next)
                             .onSubmit { focus = .password }
@@ -108,6 +108,7 @@ struct SignInView: View {
                         Text("New to Artha?")
                             .foregroundStyle(Palette.secondary)
                         Button("Create an account") { isSigningUp = true }
+                            .buttonStyle(.plain)
                             .fontWeight(.semibold)
                             .foregroundStyle(Palette.accent)
                     }
@@ -117,6 +118,9 @@ struct SignInView: View {
                 }
             }
             .padding(.horizontal, 24)
+            // A phone's width at most, centered, on iPad and Mac.
+            .frame(maxWidth: 480)
+            .frame(maxWidth: .infinity)
             .animation(.snappy(duration: 0.3), value: needsCode)
             .animation(.snappy(duration: 0.3), value: error)
         }
@@ -170,6 +174,9 @@ extension View {
     func fieldStyle() -> some View {
         font(.system(size: 17))
             .foregroundStyle(Palette.ink)
+            // The rounded card around the fields is the border; without
+            // this a Mac draws its own box inside it as well.
+            .textFieldStyle(.plain)
             .padding(.horizontal, 16)
             .frame(minHeight: 54)
     }

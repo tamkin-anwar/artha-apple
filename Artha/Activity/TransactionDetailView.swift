@@ -32,7 +32,7 @@ struct TransactionDetailView: View {
             }
         }
         .background(Palette.ground)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineTitle()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 if isSaving {
@@ -61,7 +61,7 @@ struct TransactionDetailView: View {
                         Text(Money.symbol(for: tx.currency))
                             .foregroundStyle(Palette.secondary)
                         TextField("0.00", text: $amountText)
-                            .keyboardType(.decimalPad)
+                            .keyboard(.decimal)
                             .fixedSize()
                             .foregroundStyle(Palette.ink)
                             .accessibilityLabel("Amount")
@@ -89,6 +89,7 @@ struct TransactionDetailView: View {
                             Text("Income").tag("income")
                         }
                         .pickerStyle(.menu)
+                        .labelsHidden()
                     }
                     Hairline()
                     FieldRow("Category") {
@@ -97,6 +98,7 @@ struct TransactionDetailView: View {
                             Text("Uncategorized").tag(String?.none)
                         }
                         .pickerStyle(.menu)
+                        .labelsHidden()
                     }
                     Hairline()
                     FieldRow("Date") {

@@ -25,7 +25,7 @@ struct TodayView: View {
     var body: some View {
         NavigationStack(path: $path) {
             page
-                .toolbar(.hidden, for: .navigationBar)
+                .hideNavigationBar()
                 .navigationDestination(for: TodayRoute.self) { route in
                     switch route {
                     case .transaction(let id, let fallback):
@@ -143,6 +143,18 @@ struct TodayView: View {
 private struct TodayHeader: View {
     @Environment(AppSession.self) private var session
     @Environment(MonthModel.self) private var month
+    #if os(macOS)
+    @Environment(\.openSettings) private var openSettings
+    #endif
+
+    /// A sheet on iPhone and iPad; the Settings window on a Mac.
+    private func openAccountSettings() {
+        #if os(macOS)
+        openSettings()
+        #else
+        session.isShowingSettings = true
+        #endif
+    }
 
     var body: some View {
         HStack {
@@ -159,7 +171,7 @@ private struct TodayHeader: View {
                 }
             }
             Spacer()
-            Button { session.isShowingSettings = true } label: {
+            Button(action: openAccountSettings) {
                 Text(session.user?.initials ?? "")
                     .font(.system(size: 14, weight: .semibold))
                     .frame(width: 44, height: 44)

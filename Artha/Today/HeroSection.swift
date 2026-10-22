@@ -24,6 +24,9 @@ struct HeroSection: View {
                 .foregroundStyle(Palette.secondary)
                 .frame(minHeight: 32)
             }
+            // The label draws its own chevron; a Mac would add a second.
+            .menuIndicator(.hidden)
+            .buttonStyle(.plain)
 
             Text(Money.whole(month.heroValue, month.currencyCode))
                 .font(.figure(76))

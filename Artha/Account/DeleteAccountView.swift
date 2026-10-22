@@ -16,7 +16,7 @@ struct DeleteAccountView: View {
     private let points: [(symbol: String, text: String)] = [
         ("calendar", "Your account and everything in it is erased for good after 30 days."),
         ("arrow.uturn.backward", "Changed your mind? Sign in any time before then and nothing is lost."),
-        ("iphone.and.arrow.forward", "Every device is signed out, this iPhone included."),
+        ("iphone.and.arrow.forward", "Every device is signed out, this \(ThisDevice.name) included."),
     ]
 
     var body: some View {

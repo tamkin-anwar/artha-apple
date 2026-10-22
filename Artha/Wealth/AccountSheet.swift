@@ -63,6 +63,7 @@ struct AccountSheet: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .labelsHidden()
                 }
                 Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
                 Row("Currency") {
@@ -70,6 +71,7 @@ struct AccountSheet: View {
                         ForEach(wealth.currencies, id: \.self) { Text("\(Money.symbol(for: $0)) \($0)").tag($0) }
                     }
                     .pickerStyle(.menu)
+                    .labelsHidden()
                 }
             }
             .font(.system(size: 16))

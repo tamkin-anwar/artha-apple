@@ -1,5 +1,9 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// Artha's colors, from the orb: cool graphite-navy in Dark, crisp white in
 /// Light, orb blue for anything tappable, and color that changes only when
@@ -32,12 +36,20 @@ nonisolated enum Palette {
     static let sun = Color(hex: 0xF5A524)
 
     private static func dynamic(light: UInt32, dark: UInt32) -> Color {
+        #if canImport(UIKit)
         Color(UIColor { @Sendable traits in
             UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
         })
+        #else
+        // The Mac's version: follows the window's light or dark appearance.
+        Color(NSColor(name: nil) { @Sendable appearance in
+            NSColor(hex: appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light)
+        })
+        #endif
     }
 }
 
+#if canImport(UIKit)
 extension UIColor {
     nonisolated convenience init(hex: UInt32) {
         self.init(red: CGFloat((hex >> 16) & 0xFF) / 255,
@@ -46,6 +58,16 @@ extension UIColor {
                   alpha: 1)
     }
 }
+#else
+extension NSColor {
+    nonisolated convenience init(hex: UInt32) {
+        self.init(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
+                  green: CGFloat((hex >> 8) & 0xFF) / 255,
+                  blue: CGFloat(hex & 0xFF) / 255,
+                  alpha: 1)
+    }
+}
+#endif
 
 extension Color {
     nonisolated init(hex: UInt32) {
