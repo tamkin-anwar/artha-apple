@@ -113,6 +113,8 @@ final class AppSession {
         phase = .signedIn
         await refresh()
         prefetch()
+        await Reminders.startQuietTrial()
+        await updateReminders()
     }
 
     func signOut() async {
@@ -139,6 +141,7 @@ final class AppSession {
             refreshError = nil
             lastRefresh = .now
             await syncTimeZone()
+            await updateReminders()
         } catch APIError.unauthorized {
             signOutLocally()
         } catch let error as APIError {
@@ -159,6 +162,8 @@ final class AppSession {
         async let plan: Void = planShown ? self.plan.load() : ()
         async let wealth: Void = wealthShown ? self.wealth.load() : ()
         _ = await (today, plan, wealth)
+        // Category limits come from the plan, which may land after Today.
+        if planShown { await updateReminders() }
     }
 
     func addTransaction(description: String, amount: Decimal, type: String) async throws {
@@ -185,6 +190,25 @@ final class AppSession {
             URLQueryItem(name: "category", value: categories.joined(separator: ",")),
         ]
         return try await api.get(components.string ?? "transactions")
+    }
+
+    // MARK: Notifications
+
+    /// Reschedules bill reminders and checks the budget against the latest
+    /// numbers. Runs after every refresh, including in the background.
+    func updateReminders() async {
+        guard let summary = month.summary, let user else { return }
+        await Reminders.scheduleBills(summary, user: user)
+        await Reminders.checkBudget(summary, limits: plan.limits, user: user)
+    }
+
+    /// A background refresh: the numbers, then reminders and widgets, with
+    /// nothing on screen. iOS decides when (Settings > General >
+    /// Background App Refresh has to be on).
+    func backgroundRefresh() async {
+        guard phase == .signedIn else { return }
+        await plan.load()
+        await refresh()  // ends with updateReminders(), with the plan already in
     }
 
     // MARK: Settings
@@ -280,6 +304,8 @@ final class AppSession {
         async let plan: Void = planShown ? self.plan.load() : ()
         async let list: Void = listShown ? activity.reload() : ()
         _ = await (today, plan, list)
+        // Category limits come from the plan, which may land after Today.
+        if planShown { await updateReminders() }
     }
 
     /// Loads Plan, Activity and Wealth behind Today, so the first tap on
@@ -291,6 +317,7 @@ final class AppSession {
             async let list: Void = activity.reload()
             async let wealth: Void = self.wealth.load()
             _ = await (plan, list, wealth)
+            await updateReminders()
         }
     }
 
@@ -322,6 +349,7 @@ final class AppSession {
     }
 
     private func signOutLocally() {
+        Reminders.clearAll()
         Keychain.delete(account: Keychain.tokenAccount)
         ResponseCache.clear()
         WidgetStore.clear()

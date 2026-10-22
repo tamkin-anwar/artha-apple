@@ -1,8 +1,12 @@
+import BackgroundTasks
 import SwiftUI
+import UserNotifications
 
 @main
 struct ArthaApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var session = AppSession()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -10,6 +14,53 @@ struct ArthaApp: App {
                 .environment(session)
                 .environment(session.month)
                 .onOpenURL { session.open($0) }
+                .task { appDelegate.session = session }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { BackgroundRefresh.schedule() }
+        }
+        // Keeps bill reminders and budget alerts current while the app is
+        // closed: iOS wakes it now and then (more often for people who open
+        // it often) to refresh the numbers.
+        .backgroundTask(.appRefresh(BackgroundRefresh.identifier)) {
+            BackgroundRefresh.schedule()
+            await session.backgroundRefresh()
+        }
+    }
+}
+
+/// The background refresh Artha asks iOS for: no sooner than every few
+/// hours; iOS picks the real moment.
+nonisolated enum BackgroundRefresh {
+    static let identifier = "studio.anwarcreative.artha.refresh"
+
+    static func schedule() {
+        let request = BGAppRefreshTaskRequest(identifier: identifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 4 * 60 * 60)
+        try? BGTaskScheduler.shared.submit(request)
+    }
+}
+
+/// Shows Artha's notifications while the app is open too, and opens the
+/// right tab when one is tapped.
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    var session: AppSession?
+
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification)
+        async -> UNNotificationPresentationOptions {
+        [.banner, .list, .sound]
+    }
+
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        let route = response.notification.request.content.userInfo["route"] as? String
+        await MainActor.run {
+            if let route, let url = URL(string: "artha://\(route)") { session?.open(url) }
         }
     }
 }

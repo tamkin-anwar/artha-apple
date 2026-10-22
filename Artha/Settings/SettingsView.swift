@@ -125,6 +125,11 @@ struct SettingsView: View {
 
     private var applePay: some View {
         Section {
+            NavigationLink {
+                NotificationsView()
+            } label: {
+                SettingsRow(symbol: "bell", title: "Notifications")
+            }
             Button { showingApplePay = true } label: {
                 HStack {
                     SettingsRow(symbol: "wave.3.right", title: "Apple Pay logging")

@@ -14,6 +14,11 @@ nonisolated struct APIUser: Decodable, Sendable {
     let currency: String
     let timezone: String?
     let twoFactorEnabled: Bool
+    /// Shared with the website's notification settings. Optional so a
+    /// saved copy from before these existed still decodes.
+    let notifyBillsDue: Bool?
+    let notifyBudgetAlerts: Bool?
+    let reminderHour: Int?
 
     var initials: String {
         let parts = [firstName, lastName].compactMap { $0?.first }.map(String.init)

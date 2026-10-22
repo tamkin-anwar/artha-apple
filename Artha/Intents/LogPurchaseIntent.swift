@@ -126,12 +126,16 @@ enum PurchaseLogger {
 
         // Safe to Spend just changed: hand the widgets the new number now,
         // so it's right by the time the phone is back in a pocket.
-        if let (_, today): (TodaySummary, Data) = try? await api.fetch("today") {
+        var safeToSpend: String?
+        if let (summary, today): (TodaySummary, Data) = try? await api.fetch("today") {
             AppSession.publishToWidgets(today)
+            safeToSpend = summary.safeToSpend.map { Money.whole(Decimal.api($0.amount), summary.currency) }
         }
 
         let tx = envelope.transaction
         let logged = "Logged \(Money.cents(Decimal.api(tx.amount), tx.currency)) at \(tx.description)"
-        return tx.category == nil ? "\(logged)." : "\(logged), under \(tx.categoryLabel)."
+        let line = tx.category == nil ? "\(logged)." : "\(logged), under \(tx.categoryLabel)."
+        await Reminders.purchaseLogged(line, safeToSpend: safeToSpend)
+        return line
     }
 }

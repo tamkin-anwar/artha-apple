@@ -8,6 +8,16 @@
 	<!-- Only standard HTTPS through Apple's networking and the Keychain,
 	     which are exempt, so App Store Connect doesn't hold every build
 	     at "Missing Compliance". -->
+	<!-- Background refresh keeps bill reminders and budget alerts current
+	     while the app is closed (ArthaApp's BackgroundRefresh). -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>studio.anwarcreative.artha.refresh</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSAppTransportSecurity</key>
