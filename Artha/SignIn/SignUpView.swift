@@ -10,8 +10,6 @@ struct SignUpView: View {
     @Environment(AppSession.self) private var session
     @Environment(\.dismiss) private var dismiss
 
-    /// The currencies Artha supports (utils.CURRENCY_CODES on the server).
-    static let currencies = ["USD", "EUR", "GBP", "CAD", "AUD", "BDT"]
 
     private enum Field { case firstName, email, username, password }
 
@@ -87,14 +85,8 @@ struct SignUpView: View {
                             .font(.system(.body))
                             .foregroundStyle(Palette.ink)
                         Spacer()
-                        Picker("Currency", selection: $currency) {
-                            ForEach(Self.currencies, id: \.self) { code in
-                                Text(Self.label(for: code)).tag(code)
-                            }
-                        }
-                        .labelsHidden()
-                        .tint(Palette.accent)
-                        .fixedSize()
+                        CurrencyButton(selection: $currency)
+                            .padding(.trailing, 10)
                     }
                     .padding(.leading, 16)
                     .padding(.trailing, 6)
@@ -102,7 +94,7 @@ struct SignUpView: View {
                     .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
                     .padding(.top, 20)
 
-                    Text("Totals and budgets show in this currency. You can change it later on arthaapp.com.")
+                    Text("Totals and budgets show in this currency. You can change it later in Settings.")
                         .font(.system(.footnote))
                         .foregroundStyle(Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -190,11 +182,6 @@ struct SignUpView: View {
     /// The phone region's currency when Artha supports it, otherwise USD.
     private static var regionCurrency: String {
         let code = Locale.current.currency?.identifier ?? "USD"
-        return currencies.contains(code) ? code : "USD"
-    }
-
-    private static func label(for code: String) -> String {
-        let name = Locale.current.localizedString(forCurrencyCode: code) ?? code
-        return "\(name) (\(code))"
+        return Currencies.isSupported(code) ? code : "USD"
     }
 }

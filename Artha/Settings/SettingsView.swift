@@ -96,16 +96,15 @@ struct SettingsView: View {
 
     private func money(_ user: APIUser) -> some View {
         Section {
-            Picker(selection: Binding(get: { user.currency }, set: { change(currency: $0) })) {
-                ForEach(SignUpView.currencies, id: \.self) { code in
-                    Text(Self.currencyName(code)).tag(code)
-                }
-            } label: {
+            HStack {
                 SettingsRow(symbol: "dollarsign.circle", title: "Currency")
+                Spacer()
+                if isChangingCurrency {
+                    ProgressView().controlSize(.small)
+                } else {
+                    CurrencyButton(selection: Binding(get: { user.currency }, set: { change(currency: $0) }))
+                }
             }
-            .pickerStyle(.menu)
-            .tint(Palette.secondary)
-            .disabled(isChangingCurrency)
 
             HStack {
                 SettingsRow(symbol: "globe", title: "Time zone")
@@ -212,11 +211,6 @@ struct SettingsView: View {
                 currencyError = "Artha couldn't change the currency. Try again in a moment."
             }
         }
-    }
-
-    static func currencyName(_ code: String) -> String {
-        let name = Locale.current.localizedString(forCurrencyCode: code) ?? code
-        return "\(name) (\(code))"
     }
 
     private static var version: String {

@@ -141,16 +141,26 @@ extension View {
     }
 }
 
-/// Money as Artha shows it: the currency's own symbol (the same six the web
-/// app supports, with the same symbols as utils.CURRENCY_SYMBOLS) and
-/// grouped digits. Totals use the person's display currency; a single
+/// Money as Artha shows it: the currency's own symbol (from `Currencies`,
+/// the same table as the server's utils.CURRENCY_SYMBOLS) and grouped
+/// digits. Totals use the person's display currency; a single
 /// transaction always uses its own.
 enum Money {
     private static let locale = Locale(identifier: "en_US")
-    private static let symbols = ["USD": "$", "GBP": "£", "EUR": "€", "BDT": "৳", "CAD": "$", "AUD": "$"]
+
+    /// What goes before the number: "$", "HK$", or the code and a space
+    /// for a currency without a symbol of its own ("CHF ").
+    private static func prefix(_ code: String) -> String {
+        Currencies.table[code]?.prefix ?? "\(code) "
+    }
+
+    /// Decimals a currency shows: 2 for most, none for JPY or KRW.
+    private static func digits(_ code: String) -> Int {
+        Currencies.table[code]?.digits ?? 2
+    }
 
     static func symbol(for code: String) -> String {
-        symbols[code] ?? code
+        prefix(code).trimmingCharacters(in: .whitespaces)
     }
 
     static func whole(_ value: Decimal, _ code: String) -> String {
@@ -158,18 +168,18 @@ enum Money {
     }
 
     static func cents(_ value: Decimal, _ code: String) -> String {
-        format(value, code, fractionDigits: 2)
+        format(value, code, fractionDigits: digits(code))
     }
 
     /// Whole units when the amount is whole (Rent, $1,650), cents when it
     /// isn't (Spotify, $11.99).
     static func natural(_ value: Decimal, _ code: String) -> String {
-        format(value, code, fractionDigits: value == value.rounded(0) ? 0 : 2)
+        format(value, code, fractionDigits: value == value.rounded(0) ? 0 : digits(code))
     }
 
     /// Short enough for a Lock Screen circle: $232, $1.2K, $154K, $1.3M.
     static func compact(_ value: Decimal, _ code: String) -> String {
-        let symbol = symbols[code] ?? "\(code) "
+        let symbol = prefix(code)
         let number = (abs(value) as NSDecimalNumber).doubleValue
         let sign = value < 0 ? "−" : ""
         switch number {
@@ -181,7 +191,7 @@ enum Money {
     }
 
     private static func format(_ value: Decimal, _ code: String, fractionDigits: Int) -> String {
-        let symbol = symbols[code] ?? "\(code) "
+        let symbol = prefix(code)
         let number = abs(value).formatted(.number.locale(locale).precision(.fractionLength(fractionDigits)))
         return (value < 0 ? "−" : "") + symbol + number
     }

@@ -67,11 +67,7 @@ struct AccountSheet: View {
                 }
                 Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
                 Row("Currency") {
-                    Picker("Currency", selection: $currency) {
-                        ForEach(wealth.currencies, id: \.self) { Text("\(Money.symbol(for: $0)) \($0)").tag($0) }
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
+                    CurrencyButton(selection: $currency, showsName: false)
                 }
             }
             .font(.system(.callout))

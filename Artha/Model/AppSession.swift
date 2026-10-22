@@ -138,7 +138,15 @@ final class AppSession {
                 ResponseCache.save(data, as: .me)
             }
             let (summary, data) = try await today
+            // The currency changed somewhere else (the website, another
+            // device): every screen and Settings follow it, not just Today.
+            let previousCurrency = month.summary?.currency ?? user?.currency
             month.apply(summary)
+            // (A change made in this app's Settings already updated `user`
+            // and reloads everything itself.)
+            if let previousCurrency, previousCurrency != summary.currency, user?.currency != summary.currency {
+                Task { await self.followCurrencyChange() }
+            }
             ResponseCache.save(data, as: .today)
             Self.publishToWidgets(data)
             refreshError = nil
@@ -276,6 +284,17 @@ final class AppSession {
     func refreshEverythingNow() async {
         guard phase == .signedIn else { return }
         await refreshEverything()
+    }
+
+    /// Today noticed a new display currency set on another device: catch
+    /// Settings, Plan, Activity and Wealth up so nothing shows the old one.
+    private func followCurrencyChange() async {
+        await refreshUser()
+        async let plan: Void = self.plan.summary != nil ? self.plan.load() : ()
+        async let list: Void = activity.reload()
+        async let wealth: Void = self.wealth.summary != nil ? self.wealth.load() : ()
+        _ = await (plan, list, wealth)
+        await updateReminders()
     }
 
     /// Every screen at once, e.g. after the display currency changes.
