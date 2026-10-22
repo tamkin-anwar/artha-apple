@@ -12,6 +12,7 @@ struct LimitSheet: View {
 
     @State private var category: String?
     @State private var text = ""
+    @State private var rollover = false
     @State private var isSaving = false
     @State private var error: String?
     @FocusState private var focused: Bool
@@ -73,6 +74,22 @@ struct LimitSheet: View {
                 .padding(.top, 22)
             }
 
+            Toggle(isOn: $rollover) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Carry over what's left")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Palette.ink)
+                    Text("Unspent money moves to next month. Going over takes it off next month.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Palette.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(Palette.good)
+            .padding(16)
+            .background(Palette.surface, in: .rect(cornerRadius: 18))
+            .padding(.top, 26)
+
             if let error {
                 Text(error)
                     .font(.system(size: 14))
@@ -116,7 +133,9 @@ struct LimitSheet: View {
         .onAppear {
             if let existing {
                 category = existing.key
-                text = Decimal.api(existing.cap).entryText
+                // The limit as set, not this month's with what carried over.
+                text = Decimal.api(existing.baseCap ?? existing.cap).entryText
+                rollover = existing.rollover ?? false
             } else if category == nil {
                 // Lead with the category that usually costs the most.
                 category = plan.unbudgeted.max { (plan.usual(for: $0.key) ?? 0) < (plan.usual(for: $1.key) ?? 0) }?.key
@@ -135,7 +154,7 @@ struct LimitSheet: View {
 
     private func save() {
         guard let category, let amount else { return }
-        run { try await plan.saveLimit(category, amount: amount) }
+        run { try await plan.saveLimit(category, amount: amount, rollover: rollover) }
     }
 
     private func remove(_ key: String) {

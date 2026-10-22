@@ -131,6 +131,45 @@ nonisolated struct PlanSummary: Decodable, Sendable {
         let overBy: String
         let percentUsed: Double
         let tier: String
+        /// Rollover: last month's leftover (or overspending) moves into
+        /// this month. Optional so a cached plan from before still decodes.
+        let rollover: Bool?
+        /// The limit as set, before what carried over.
+        let baseCap: String?
+        /// What last month added (positive) or took off (negative).
+        let carried: String?
+    }
+
+    /// A savings goal, in its own currency.
+    nonisolated struct Goal: Decodable, Sendable, Identifiable, Hashable {
+        let id: Int
+        let name: String
+        let currency: String
+        let target: String
+        let saved: String
+        let left: String
+        let percent: Int
+        let targetDate: String?
+        let monthsLeft: Int?
+        /// What to set aside each month to reach it by its date.
+        let perMonth: String?
+        /// "saving", "done" or "overdue".
+        let status: String
+    }
+
+    /// A charge that repeats like a bill but isn't tracked as one.
+    nonisolated struct BillSuggestion: Decodable, Sendable, Identifiable, Hashable {
+        let key: String
+        let description: String
+        let amount: String
+        let currency: String
+        /// "weekly", "biweekly" or "monthly".
+        let interval: String
+        let count: Int
+        let lastDate: String
+        let nextDate: String
+        let category: String?
+        var id: String { key }
     }
 
     nonisolated struct Typical: Decodable, Sendable {
@@ -152,6 +191,12 @@ nonisolated struct PlanSummary: Decodable, Sendable {
     let categoryBudgets: [Limit]
     let unbudgetedCategories: [CategoryList.Category]
     let typical: Typical?
+    let goals: [Goal]?
+    let billSuggestions: [BillSuggestion]?
+}
+
+nonisolated struct GoalEnvelope: Decodable, Sendable {
+    let goal: PlanSummary.Goal
 }
 
 nonisolated struct APIAccount: Decodable, Sendable, Identifiable, Equatable {
@@ -269,6 +314,8 @@ nonisolated struct TodaySummary: Decodable, Sendable {
     /// The newest purchase Apple Pay logged on its own; nil until the
     /// automation has logged one.
     let applePay: ApplePayStatus?
+    /// How many charges look like bills nobody tracks yet (Plan lists them).
+    let billSuggestions: Int?
 
     nonisolated struct ApplePayStatus: Decodable, Sendable {
         let description: String

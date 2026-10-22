@@ -107,6 +107,9 @@ struct TodayView: View {
                 if month.toReview > 0 {
                     ReviewCard().padding(.horizontal, 16).padding(.top, 24)
                 }
+                if month.billSuggestions > 0 {
+                    BillSuggestionsCard().padding(.horizontal, 16).padding(.top, 24)
+                }
                 if !month.hasBudget {
                     NoBudgetCard().padding(.horizontal, 16).padding(.top, 24)
                 } else if month.status == .ahead {

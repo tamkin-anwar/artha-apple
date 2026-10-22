@@ -53,6 +53,22 @@ struct ReviewCard: View {
     }
 }
 
+/// Charges that repeat like bills but aren't tracked. Plan lists them,
+/// with Track it and Not a bill.
+struct BillSuggestionsCard: View {
+    @Environment(AppSession.self) private var session
+    @Environment(MonthModel.self) private var month
+
+    var body: some View {
+        let count = month.billSuggestions
+        StateCard(symbol: "repeat",
+                  title: count == 1 ? "1 charge looks like a bill" : "\(count) charges look like bills",
+                  detail: "They repeat like clockwork. Track them so Safe to Spend counts them before they hit.",
+                  tint: Palette.accent,
+                  action: "Take a look") { session.route = .plan }
+    }
+}
+
 private struct StateCard: View {
     let symbol: String
     let title: String

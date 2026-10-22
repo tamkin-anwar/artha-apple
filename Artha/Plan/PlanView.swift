@@ -9,6 +9,8 @@ import SwiftUI
 struct PlanView: View {
     @Environment(AppSession.self) private var session
     @State private var editingLimit: LimitTarget?
+    @State private var editingGoal: GoalTarget?
+    @State private var fundingGoal: PlanSummary.Goal?
     @State private var width: CGFloat = 0
 
     private var plan: PlanModel { session.plan }
@@ -24,11 +26,15 @@ struct PlanView: View {
                     Columns(isWide: width >= WideLayout.twoColumnWidth, spacing: 24) {
                         VStack(alignment: .leading, spacing: 30) {
                             PlanCard()
+                            if !plan.billSuggestions.isEmpty {
+                                SuggestionsSection()
+                            }
                             BillsSection()
                         }
                     } trailing: {
                         VStack(alignment: .leading, spacing: 30) {
                             LimitsSection(editingLimit: $editingLimit)
+                            GoalsSection(editingGoal: $editingGoal, fundingGoal: $fundingGoal)
                             MonthByMonth()
                         }
                         .padding(.top, width >= WideLayout.twoColumnWidth ? 0 : 30)
@@ -51,6 +57,12 @@ struct PlanView: View {
         .task { if plan.summary == nil { await plan.load() } }
         .sheet(item: $editingLimit) { target in
             LimitSheet(existing: target.limit)
+        }
+        .sheet(item: $editingGoal) { target in
+            GoalSheet(existing: target.goal)
+        }
+        .sheet(item: $fundingGoal) { goal in
+            GoalMoneySheet(goal: goal)
         }
     }
 
@@ -404,6 +416,15 @@ private struct LimitRow: View {
     let currencyCode: String
 
     private var fraction: Double { min(limit.percentUsed / 100, 1) }
+
+    private var detail: String {
+        let base = "\(Money.whole(Decimal.api(limit.spent), currencyCode)) of \(Money.whole(Decimal.api(limit.cap), currencyCode))"
+        guard let raw = limit.carried else { return base }
+        let carried = Decimal.api(raw)
+        if carried > 0 { return base + ", \(Money.whole(carried, currencyCode)) carried over" }
+        if carried < 0 { return base + ", \(Money.whole(-carried, currencyCode)) less after last month" }
+        return base
+    }
     private var tint: Color {
         switch limit.tier {
         case "over": Palette.caution
@@ -424,7 +445,7 @@ private struct LimitRow: View {
                     Text(limit.label)
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(Palette.ink)
-                    Text("\(Money.whole(Decimal.api(limit.spent), currencyCode)) of \(Money.whole(Decimal.api(limit.cap), currencyCode))")
+                    Text(detail)
                         .font(.system(size: 13))
                         .monospacedDigit()
                         .foregroundStyle(Palette.secondary)
@@ -449,5 +470,220 @@ private struct LimitRow: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityHint("Change or remove this limit")
+    }
+}
+
+// MARK: - Spotted bills
+
+/// Charges that repeat like a bill but aren't tracked as one. Nothing
+/// changes until the person says so.
+private struct SuggestionsSection: View {
+    @Environment(AppSession.self) private var session
+    @State private var working: String?
+    @State private var error: String?
+    private var plan: PlanModel { session.plan }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionLabel("Looks like a bill")
+                .padding(.horizontal, 4)
+            VStack(spacing: 0) {
+                ForEach(Array(plan.billSuggestions.enumerated()), id: \.element.id) { index, item in
+                    row(item)
+                    if index < plan.billSuggestions.count - 1 {
+                        Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .background(Palette.surface, in: .rect(cornerRadius: 20))
+            Text(error ?? "Tracked bills count in Safe to Spend before they're charged, and Artha adds each one when it's due.")
+                .font(.system(size: 13))
+                .foregroundStyle(error == nil ? Palette.secondary : Palette.caution)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 4)
+        }
+    }
+
+    private func row(_ item: PlanSummary.BillSuggestion) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Image(systemName: "repeat")
+                    .font(.system(size: 15, weight: .medium))
+                    .frame(width: 32, height: 32)
+                    .background(Palette.raised, in: .rect(cornerRadius: 10))
+                    .foregroundStyle(Palette.ink)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(item.description)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(1)
+                    Text("\(Money.natural(Decimal.api(item.amount), item.currency)) \(rhythm(item.interval)) · \(item.count) so far")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Palette.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+            HStack(spacing: 8) {
+                Button("Not a bill") { act(item.key) { try await plan.dismissBill(item.key) } }
+                    .buttonStyle(CapsuleButtonStyle())
+                Button("Track it") { act(item.key) { try await plan.trackBill(item.key) } }
+                    .buttonStyle(CapsuleButtonStyle(prominent: true))
+            }
+            .disabled(working != nil)
+            .opacity(working == item.key ? 0.5 : 1)
+        }
+        .padding(.vertical, 13)
+    }
+
+    private func rhythm(_ interval: String) -> String {
+        switch interval {
+        case "weekly": "every week"
+        case "biweekly": "every 2 weeks"
+        default: "every month"
+        }
+    }
+
+    private func act(_ key: String, _ work: @escaping () async throws -> Void) {
+        working = key
+        error = nil
+        Task {
+            defer { working = nil }
+            do {
+                try await work()
+            } catch let failure as APIError {
+                error = failure.message
+            } catch {
+                self.error = "Artha couldn't save that. Try again in a moment."
+            }
+        }
+    }
+}
+
+// MARK: - Goals
+
+private struct GoalsSection: View {
+    @Environment(AppSession.self) private var session
+    @Binding var editingGoal: GoalTarget?
+    @Binding var fundingGoal: PlanSummary.Goal?
+    private var plan: PlanModel { session.plan }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                SectionLabel("Goals")
+                Spacer()
+                if !plan.goals.isEmpty {
+                    Button("Add", systemImage: "plus") { editingGoal = GoalTarget(goal: nil) }
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Palette.accent)
+                        .frame(minHeight: 32)
+                }
+            }
+            .padding(.horizontal, 4)
+
+            if plan.goals.isEmpty {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("Saving for something? Add a goal and Artha shows how much to set aside each month to get there.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Palette.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Add a goal") { editingGoal = GoalTarget(goal: nil) }
+                        .buttonStyle(CapsuleButtonStyle())
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Palette.surface, in: .rect(cornerRadius: 20))
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(plan.goals.enumerated()), id: \.element.id) { index, goal in
+                        GoalRow(goal: goal, onEdit: { editingGoal = GoalTarget(goal: goal) },
+                                onFund: { fundingGoal = goal })
+                        if index < plan.goals.count - 1 {
+                            Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .background(Palette.surface, in: .rect(cornerRadius: 20))
+            }
+        }
+    }
+}
+
+private struct GoalRow: View {
+    let goal: PlanSummary.Goal
+    let onEdit: () -> Void
+    let onFund: () -> Void
+
+    private var isDone: Bool { goal.status == "done" }
+
+    private var detail: String {
+        let left = Money.whole(Decimal.api(goal.left), goal.currency)
+        switch goal.status {
+        case "done": return "Reached"
+        case "overdue": return "\(left) to go, past the date you set"
+        default:
+            if let raw = goal.perMonth, let date = Date.apiDay(goal.targetDate) {
+                return "\(Money.whole(Decimal.api(raw), goal.currency)) a month to reach it by \(date.formatted(.dateTime.month(.abbreviated).year()))"
+            }
+            return "\(left) to go"
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Button(action: onEdit) {
+                HStack(spacing: 12) {
+                    Image(systemName: isDone ? "checkmark.circle.fill" : "flag.fill")
+                        .font(.system(size: 15, weight: .medium))
+                        .frame(width: 32, height: 32)
+                        .background(Palette.raised, in: .rect(cornerRadius: 10))
+                        .foregroundStyle(isDone ? Palette.good : Palette.ink)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(goal.name)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(Palette.ink)
+                            .lineLimit(1)
+                        Text(detail)
+                            .font(.system(size: 13))
+                            .foregroundStyle(isDone ? Palette.good : Palette.secondary)
+                    }
+                    Spacer(minLength: 8)
+                    Text("\(goal.percent)%")
+                        .font(.figure(16, weight: .bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Palette.ink)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Change or delete this goal")
+
+            GeometryReader { proxy in
+                let fraction = Double(goal.percent) / 100
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Palette.raised)
+                    Capsule().fill(isDone ? Palette.good : Palette.accent)
+                        .frame(width: max(proxy.size.width * fraction, fraction > 0 ? 6 : 0))
+                }
+            }
+            .frame(height: 6)
+
+            HStack {
+                Text("\(Money.natural(Decimal.api(goal.saved), goal.currency)) of \(Money.natural(Decimal.api(goal.target), goal.currency))")
+                    .font(.system(size: 13))
+                    .monospacedDigit()
+                    .foregroundStyle(Palette.secondary)
+                Spacer()
+                if !isDone {
+                    Button("Add money", action: onFund)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Palette.accent)
+                        .frame(minHeight: 32)
+                }
+            }
+        }
+        .padding(.vertical, 13)
     }
 }

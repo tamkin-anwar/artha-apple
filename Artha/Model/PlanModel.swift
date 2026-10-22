@@ -53,6 +53,8 @@ final class PlanModel {
     var isOver: Bool { overBy > 0 }
     var limits: [PlanSummary.Limit] { summary?.categoryBudgets ?? [] }
     var unbudgeted: [CategoryList.Category] { summary?.unbudgetedCategories ?? [] }
+    var goals: [PlanSummary.Goal] { summary?.goals ?? [] }
+    var billSuggestions: [PlanSummary.BillSuggestion] { summary?.billSuggestions ?? [] }
 
     /// What this person usually spends a month, rounded up to a friendly
     /// number, to suggest instead of making them guess.
@@ -128,8 +130,52 @@ final class PlanModel {
         await afterChange()
     }
 
-    func saveLimit(_ category: String, amount: Decimal) async throws {
-        try await api.put("category-budgets/\(category)", body: ["monthly_cap": NSDecimalNumber(decimal: amount).stringValue])
+    func saveLimit(_ category: String, amount: Decimal, rollover: Bool) async throws {
+        try await api.put("category-budgets/\(category)", body: [
+            "monthly_cap": NSDecimalNumber(decimal: amount).stringValue,
+            "rollover": rollover,
+        ])
+        await afterChange()
+    }
+
+    // MARK: Goals
+
+    /// Creates a goal (id nil) or saves changes to one. A nil date clears it.
+    func saveGoal(id: Int?, name: String, target: Decimal, date: Date?) async throws {
+        let body: [String: Any] = [
+            "name": name,
+            "target_amount": NSDecimalNumber(decimal: target).stringValue,
+            "target_date": date.map { $0.formatted(.iso8601.year().month().day()) } ?? "",
+        ]
+        if let id {
+            let _: GoalEnvelope = try await api.patch("goals/\(id)", body: body)
+        } else {
+            let _: GoalEnvelope = try await api.post("goals", body: body)
+        }
+        await load()
+    }
+
+    /// Adds money to a goal; a negative amount takes it back out.
+    func addToGoal(_ id: Int, amount: Decimal) async throws {
+        let _: GoalEnvelope = try await api.post("goals/\(id)/add", body: ["amount": NSDecimalNumber(decimal: amount).stringValue])
+        await load()
+    }
+
+    func deleteGoal(_ id: Int) async throws {
+        try await api.delete("goals/\(id)")
+        await load()
+    }
+
+    // MARK: Spotted bills
+
+    /// Tracks a repeating charge as a bill, which changes Safe to Spend.
+    func trackBill(_ key: String) async throws {
+        let _: TransactionEnvelope = try await api.post("bill-suggestions/track", body: ["key": key])
+        await afterChange()
+    }
+
+    func dismissBill(_ key: String) async throws {
+        try await api.post("bill-suggestions/dismiss", body: ["key": key])
         await afterChange()
     }
 

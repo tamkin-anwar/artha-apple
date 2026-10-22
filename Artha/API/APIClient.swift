@@ -79,6 +79,11 @@ final class APIClient {
         try decoder.decode(T.self, from: try await send(path, method: "POST", body: body))
     }
 
+    /// A POST whose answer has no body worth reading (204 No Content).
+    func post(_ path: String, body: [String: Any]) async throws {
+        _ = try await send(path, method: "POST", body: body)
+    }
+
     func patch<T: Decodable>(_ path: String, body: [String: Any]) async throws -> T {
         try decoder.decode(T.self, from: try await send(path, method: "PATCH", body: body))
     }
