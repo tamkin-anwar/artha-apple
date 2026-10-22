@@ -20,13 +20,122 @@
   ],
   "groups": [
     {
+      "name": "Soft Sun",
+      "layers": [
+        {
+          "name": "soft sun",
+          "image-name": "orb-sun.svg",
+          "glass": false,
+          "opacity": 1,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [],
+          "hidden-specializations": [
+            {
+              "value": false
+            },
+            {
+              "appearance": "dark",
+              "value": false
+            },
+            {
+              "appearance": "tinted",
+              "value": true
+            }
+          ]
+        }
+      ],
+      "lighting": "individual",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.35
+      },
+      "specular": false,
+      "translucency": {
+        "enabled": false,
+        "value": 0
+      },
+      "hidden-specializations": [
+        {
+          "value": false
+        },
+        {
+          "appearance": "dark",
+          "value": false
+        },
+        {
+          "appearance": "tinted",
+          "value": true
+        }
+      ]
+    },
+    {
+      "name": "Soft Planet",
+      "layers": [
+        {
+          "name": "soft planet",
+          "image-name": "orb-planet.svg",
+          "glass": false,
+          "opacity": 1,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [],
+          "hidden-specializations": [
+            {
+              "value": false
+            },
+            {
+              "appearance": "dark",
+              "value": false
+            },
+            {
+              "appearance": "tinted",
+              "value": true
+            }
+          ]
+        }
+      ],
+      "lighting": "individual",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.35
+      },
+      "specular": false,
+      "translucency": {
+        "enabled": false,
+        "value": 0
+      },
+      "hidden-specializations": [
+        {
+          "value": false
+        },
+        {
+          "appearance": "dark",
+          "value": false
+        },
+        {
+          "appearance": "tinted",
+          "value": true
+        }
+      ]
+    },
+    {
       "name": "Sun",
       "layers": [
         {
           "name": "sun",
           "image-name": "sun.svg",
           "glass": true,
-          "hidden": false,
           "opacity": 1,
           "position": {
             "scale": 1,
@@ -53,6 +162,19 @@
                 "solid": "extended-gray:1.00000,1.00000"
               }
             }
+          ],
+          "hidden-specializations": [
+            {
+              "value": true
+            },
+            {
+              "appearance": "dark",
+              "value": true
+            },
+            {
+              "appearance": "tinted",
+              "value": false
+            }
           ]
         }
       ],
@@ -65,7 +187,20 @@
       "translucency": {
         "enabled": true,
         "value": 0.45
-      }
+      },
+      "hidden-specializations": [
+        {
+          "value": true
+        },
+        {
+          "appearance": "dark",
+          "value": true
+        },
+        {
+          "appearance": "tinted",
+          "value": false
+        }
+      ]
     },
     {
       "name": "Planet",
@@ -74,7 +209,6 @@
           "name": "planet",
           "image-name": "planet.svg",
           "glass": true,
-          "hidden": false,
           "opacity": 1,
           "position": {
             "scale": 1,
@@ -101,6 +235,19 @@
                 "solid": "extended-gray:0.70000,1.00000"
               }
             }
+          ],
+          "hidden-specializations": [
+            {
+              "value": true
+            },
+            {
+              "appearance": "dark",
+              "value": true
+            },
+            {
+              "appearance": "tinted",
+              "value": false
+            }
           ]
         }
       ],
@@ -113,7 +260,20 @@
       "translucency": {
         "enabled": true,
         "value": 0.2
-      }
+      },
+      "hidden-specializations": [
+        {
+          "value": true
+        },
+        {
+          "appearance": "dark",
+          "value": true
+        },
+        {
+          "appearance": "tinted",
+          "value": false
+        }
+      ]
     }
   ],
   "supported-platforms": {

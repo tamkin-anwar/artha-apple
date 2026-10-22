@@ -63,7 +63,9 @@ The apps read these from `Shared/Palette.xcassets` (one color set per token, in 
 
 ## Mark and icon
 
-The orb: a blue planet with a warm sun on its upper left, daybreak over a world. In the app it's `OrbMark` (gradients). The icon is an Icon Composer document with two glass layers, the sun in front of the planet, on a navy field, with light, dark, clear and tinted renditions. Preview it with `ictool Artha/AppIcon.icon --export-image ...` (Xcode's Icon Composer). The website's favicons and install icons are rendered from this same file, so the browser, Windows and the Home Screen all show one icon.
+The orb: a blue planet with a warm sun glowing on its upper left, daybreak over a world. In the app it's `OrbMark` (gradients); on the web it's the sidebar logo and, with no background, the browser tab icon (`favicon.svg`).
+
+The app icon is an Icon Composer document (`Artha/AppIcon.icon`) holding two drawings of the orb, switched per appearance with `hidden-specializations`. In Default and Dark it's the soft orb itself: the planet and the sun as SVG radial gradients in OrbMark's colors, on the navy field, without glass, so the sun glows into the planet. In Tinted and Clear, where iOS recolors everything, a soft glow turns into a plain disc, so those show two glass discs instead, the sun in front of the planet, and the sun keeps its own shape. Preview every rendition with Icon Composer's `ictool` (`.../Icon Composer.app/Contents/Executables/ictool Artha/AppIcon.icon --export-image ... --rendition TintedDark`). The website's Home Screen and install icons are rendered from the Default rendition, so the Home Screen shows one icon whether Artha is the app or the website.
 
 ## Motion and accessibility
 
