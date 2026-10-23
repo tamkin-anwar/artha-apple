@@ -11,7 +11,7 @@ Artha and Corres are siblings, not twins. They share Anwar Creative Studio's cra
 - Depth from light and one-pixel hairlines, never bevels or heavy borders.
 - Everything vector or a color: SF Symbols, SwiftUI paths and gradients, SVG on the web. The app icon is an Icon Composer document (`Artha/AppIcon.icon`), never an upscaled bitmap.
 - Both themes follow the device; Settings can pin one.
-- Motion is short and purposeful: press responses, sheets, numbers rolling to a new value. No ambient loops.
+- Motion is short and purposeful: press responses, sheets, numbers rolling to a new value. No ambient loops, with one exception: the AI Assistant's orb breathes slowly while it waits (Tamkin's call, 2026-10-23), and stops for Reduce Motion.
 - Accessibility is part of the design, not a pass at the end.
 
 ## Themes
