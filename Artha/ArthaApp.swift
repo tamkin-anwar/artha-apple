@@ -280,7 +280,7 @@ struct MainTabs: View {
         // Once, here, not on Activity: the Mac builds a tab's view more
         // than once while it settles, and a copy that gets thrown away
         // would take an opened statement, and its review, with it.
-        .statementImport(isPicking: $session.isPickingStatement)
+        .statementImport(isPicking: $session.isPickingStatement, isScanning: $session.isScanningStatement)
         .sheet(isPresented: $session.isReviewing, onDismiss: {
             Task { await session.refreshAfterReview() }
         }) {

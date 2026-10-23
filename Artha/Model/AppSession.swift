@@ -48,6 +48,8 @@ final class AppSession {
     /// Opens the statement file picker (Activity's Import button, or
     /// Import a Statement, Shift-Command-I).
     var isPickingStatement = false
+    /// Opens the document camera to scan a paper statement (iPhone, iPad).
+    var isScanningStatement = false
 
     let month = MonthModel()
     let activity: ActivityModel

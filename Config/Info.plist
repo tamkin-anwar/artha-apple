@@ -46,6 +46,8 @@
 	     or the share sheet. Alternate rank, so Artha never becomes anyone's
 	     default PDF viewer; opened in place, so the app reads the original
 	     and never keeps a copy (AppSession.open hands it to Activity). -->
+	<key>NSCameraUsageDescription</key>
+	<string>Artha uses the camera to scan a paper statement, so you can import its transactions. Nothing is saved to your photos.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>

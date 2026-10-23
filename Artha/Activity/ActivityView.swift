@@ -100,8 +100,15 @@ struct ActivityView: View {
             .onChange(of: session.searchRequest) { searchFocused = true }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Import a Statement", systemImage: "square.and.arrow.down") { session.isPickingStatement = true }
-                        .help("Import a PDF or CSV statement from your bank")
+                    if StatementScanner.isAvailable {
+                        Menu("Import a Statement", systemImage: "square.and.arrow.down") {
+                            Button("Choose a File or Photo", systemImage: "folder") { session.isPickingStatement = true }
+                            Button("Scan Paper Statement", systemImage: "doc.viewfinder") { session.isScanningStatement = true }
+                        }
+                    } else {
+                        Button("Import a Statement", systemImage: "square.and.arrow.down") { session.isPickingStatement = true }
+                            .help("Import a statement from your bank: PDF, CSV, OFX, QIF, or a photo")
+                    }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {

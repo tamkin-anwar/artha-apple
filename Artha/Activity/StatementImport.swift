@@ -8,6 +8,7 @@ import UniformTypeIdentifiers
 /// access window, and never copied onto this device.
 struct StatementImport: ViewModifier {
     @Binding var isPicking: Bool
+    @Binding var isScanning: Bool
 
     @Environment(AppSession.self) private var session
     @State private var review: Review?
@@ -36,7 +37,7 @@ struct StatementImport: ViewModifier {
 
     /// Every kind of statement file a bank exports. OFX/QFX and QIF are
     /// declared in Info.plist, so they resolve to real types here.
-    static let fileTypes: [UTType] = [.pdf, .commaSeparatedText, .plainText]
+    static let fileTypes: [UTType] = [.pdf, .commaSeparatedText, .plainText, .image]
         + ["ofx", "qfx", "qif"].compactMap { UTType(filenameExtension: $0) }
 
     func body(content: Content) -> some View {
@@ -52,6 +53,15 @@ struct StatementImport: ViewModifier {
                 session.statementToImport = nil
                 read(url)
             }
+            #if os(iOS)
+            .fullScreenCover(isPresented: $isScanning) {
+                StatementScanner { pdf in
+                    isScanning = false
+                    if let pdf { preview(PickedFile(data: pdf, name: "Scanned statement.pdf"), password: nil) }
+                }
+                .ignoresSafeArea()
+            }
+            #endif
             .overlay {
                 if isReading {
                     ProgressView("Reading your statement")
@@ -91,6 +101,16 @@ struct StatementImport: ViewModifier {
             message = "Artha couldn\u{2019}t open that file. Try saving it to Files first."
             return
         }
+        // A photo goes up as a JPEG, whatever the camera saved it as (HEIC),
+        // and no bigger than it needs to be to read.
+        if let type = UTType(filenameExtension: url.pathExtension), type.conforms(to: .image) {
+            guard let jpeg = StatementPhoto.jpeg(from: data) else {
+                message = "Artha couldn\u{2019}t open that photo. Try a screenshot of it instead."
+                return
+            }
+            preview(PickedFile(data: jpeg, name: url.deletingPathExtension().lastPathComponent + ".jpg"), password: nil)
+            return
+        }
         guard data.count <= Self.maxBytes else {
             message = "That file is too big to be a statement. Pick the PDF or CSV your bank exports."
             return
@@ -123,8 +143,8 @@ struct StatementImport: ViewModifier {
 }
 
 extension View {
-    func statementImport(isPicking: Binding<Bool>) -> some View {
-        modifier(StatementImport(isPicking: isPicking))
+    func statementImport(isPicking: Binding<Bool>, isScanning: Binding<Bool>) -> some View {
+        modifier(StatementImport(isPicking: isPicking, isScanning: isScanning))
     }
 }
 
