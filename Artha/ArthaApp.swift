@@ -210,6 +210,15 @@ struct MainTabs: View {
     @State private var selection: Destination = .today
     @State private var isAdding = false
 
+    private var windowTitle: String {
+        switch selection {
+        case .today, .add: "Today"
+        case .activity: "Activity"
+        case .plan: "Plan"
+        case .wealth: "Wealth"
+        }
+    }
+
     var body: some View {
         @Bindable var session = session
         TabView(selection: $selection) {
@@ -243,6 +252,7 @@ struct MainTabs: View {
             .padding(.vertical, 4)
         }
         .minimizeTabBarOnScroll()
+        .windowTitle(windowTitle)
         .onChange(of: selection) { previous, current in
             if current == .add {
                 selection = previous

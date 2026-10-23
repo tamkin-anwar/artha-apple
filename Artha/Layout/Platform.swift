@@ -142,3 +142,18 @@ enum SystemSettings {
         #endif
     }
 }
+
+extension View {
+    /// The Mac window's title: the screen you're on ("Activity"), the way
+    /// Mail names the mailbox. Without it a Mac window shows just "Artha"
+    /// for any screen whose own title sits inside a split view or a custom
+    /// header (Today, Activity); a screen's own title, like Plan's
+    /// "October plan", still wins. iPhone and iPad have no window title.
+    func windowTitle(_ title: String) -> some View {
+        #if os(macOS)
+        navigationTitle(title)
+        #else
+        self
+        #endif
+    }
+}
