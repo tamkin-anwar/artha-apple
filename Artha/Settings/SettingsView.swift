@@ -149,6 +149,11 @@ struct SettingsView: View {
             } label: {
                 SettingsRow(symbol: "bell", title: "Notifications")
             }
+            NavigationLink {
+                TransferAccountsView()
+            } label: {
+                SettingsRow(symbol: "arrow.left.arrow.right", title: "Your Accounts")
+            }
             if ThisDevice.canAutomateApplePay {
             Button { showingApplePay = true } label: {
                 HStack {
@@ -261,5 +266,74 @@ extension APIUser {
     var displayName: String {
         let name = [firstName, lastName].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " ")
         return name.isEmpty ? username : name
+    }
+}
+
+
+/// The accounts Artha treats as the person's own, learned from statement
+/// lines they left out of an import ("SAV 7837"). Lines to or from them
+/// start unticked next time; forgetting one counts its transfers again.
+struct TransferAccountsView: View {
+    @Environment(AppSession.self) private var session
+    @State private var accounts: [TransferAccounts.Account]?
+    @State private var error: String?
+
+    var body: some View {
+        List {
+            if let accounts, !accounts.isEmpty {
+                Section {
+                    ForEach(accounts) { account in
+                        Label(account.label, systemImage: "building.columns")
+                            .foregroundStyle(Palette.ink)
+                            .swipeActions {
+                                Button("Forget", role: .destructive) { forget(account) }
+                            }
+                            .contextMenu {
+                                Button("Forget", systemImage: "minus.circle", role: .destructive) { forget(account) }
+                            }
+                    }
+                } footer: {
+                    Text("When you leave a transfer to one of your accounts out of an import, Artha remembers it, and next time money moving to or from it starts unticked. Forget one and its transfers count again.")
+                }
+                .listRowBackground(Palette.surface)
+            }
+            if let error {
+                Text(error).foregroundStyle(Palette.caution).announcedWhenShown(error)
+                    .listRowBackground(Palette.surface)
+            }
+        }
+        .overlay {
+            if accounts == nil, error == nil {
+                ProgressView()
+            } else if accounts?.isEmpty == true {
+                ContentUnavailableView("No accounts yet", systemImage: "arrow.left.arrow.right",
+                                       description: Text("When you leave a transfer to your savings or another of your accounts out of an import, Artha remembers it here."))
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Palette.ground)
+        .navigationTitle("Your Accounts")
+        .inlineTitle()
+        .task { await load() }
+    }
+
+    private func load() async {
+        do {
+            accounts = try await session.transferAccounts()
+        } catch {
+            self.error = "Artha couldn\u{2019}t load your accounts. Try again in a moment."
+        }
+    }
+
+    private func forget(_ account: TransferAccounts.Account) {
+        withAnimation(.snappy) { accounts?.removeAll { $0.id == account.id } }
+        Task {
+            do {
+                try await session.forgetTransferAccount(account)
+            } catch {
+                self.error = "Artha couldn\u{2019}t forget that account. Try again in a moment."
+                await load()
+            }
+        }
     }
 }

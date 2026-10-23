@@ -416,10 +416,26 @@ final class AppSession {
     }
 
     /// Saves the rows kept in review, then refreshes everything they touch.
-    func importStatement(_ rows: [StatementRow]) async throws -> ImportResult {
-        let result: ImportResult = try await api.post("imports", body: ["rows": rows.map(\.asBody)])
+    /// Saves the rows kept. The lines left out that name an account
+    /// ("SAV 7837") teach Artha that account is the person's own.
+    func importStatement(_ rows: [StatementRow], leftOut: [StatementRow] = []) async throws -> ImportResult {
+        let taught: [[String: Any]] = leftOut.compactMap { row in
+            guard let ref = row.accountRef, !row.duplicate else { return nil }
+            return ["account_ref": ref]
+        }
+        let result: ImportResult = try await api.post("imports", body: ["rows": rows.map(\.asBody), "left_out": taught])
         await refreshAfterChange(reloadActivity: true)
         return result
+    }
+
+    /// The accounts Artha treats as the person's own.
+    func transferAccounts() async throws -> [TransferAccounts.Account] {
+        let list: TransferAccounts = try await api.get("me/transfer-accounts")
+        return list.accounts
+    }
+
+    func forgetTransferAccount(_ account: TransferAccounts.Account) async throws {
+        try await api.delete("me/transfer-accounts/\(account.id)")
     }
 
     private func signOutLocally() {

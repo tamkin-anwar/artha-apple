@@ -173,12 +173,15 @@ nonisolated struct StatementRow: Decodable, Sendable, Identifiable {
     /// Money moving between the person's own accounts, not spending or
     /// income: starts unticked too. Optional so an older server still decodes.
     let transfer: Bool?
+    /// The account the line names ("SAV 7837"), when it names one. Leaving
+    /// such a line out teaches Artha it's one of the person's accounts.
+    let accountRef: String?
     var include = true
 
     var isTransfer: Bool { transfer ?? false }
 
     private enum CodingKeys: String, CodingKey {
-        case date, description, amount, type, category, categoryLabel, currency, duplicate, transfer
+        case date, description, amount, type, category, categoryLabel, currency, duplicate, transfer, accountRef
     }
 
     var asBody: [String: Any] {
@@ -472,4 +475,15 @@ extension Date {
         guard parts.count == 3 else { return nil }
         return Calendar.current.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
     }
+}
+
+
+/// GET me/transfer-accounts: the person's own accounts Artha remembers.
+nonisolated struct TransferAccounts: Decodable, Sendable {
+    nonisolated struct Account: Decodable, Sendable, Identifiable, Hashable {
+        let id: Int
+        let label: String
+    }
+
+    let accounts: [Account]
 }

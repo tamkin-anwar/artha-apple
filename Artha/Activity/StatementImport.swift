@@ -245,7 +245,8 @@ private struct StatementReview: View {
         Task {
             defer { isSaving = false }
             do {
-                let result = try await session.importStatement(review.rows.filter(\.include))
+                let result = try await session.importStatement(review.rows.filter(\.include),
+                                                               leftOut: review.rows.filter { !$0.include })
                 var summary = result.imported == 1 ? "Imported 1 transaction." : "Imported \(result.imported) transactions."
                 if result.skipped > 0 { summary += " \(result.skipped) couldn\u{2019}t be saved." }
                 onImported(summary)
@@ -322,7 +323,7 @@ private struct StatementRowView: View {
                         .font(.system(.footnote))
                         .foregroundStyle(Palette.secondary)
                 } else if row.isTransfer {
-                    Text("Between your own accounts")
+                    Text(row.accountRef.map { "Between your own accounts \u{00B7} \($0)" } ?? "Between your own accounts")
                         .font(.system(.footnote))
                         .foregroundStyle(Palette.secondary)
                 }
