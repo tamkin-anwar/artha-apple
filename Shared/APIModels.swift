@@ -112,7 +112,23 @@ nonisolated struct APITransaction: Decodable, Sendable, Identifiable, Hashable {
     /// older server or cached response still decodes.
     let canSplit: Bool?
 
+    /// A bill charged something other than usual: what it was charged,
+    /// what it usually is, and what Artha expects next time.
+    let priceChange: PriceChange?
+
     var isSplit: Bool { !(split ?? []).isEmpty }
+}
+
+/// A bill paid at a different amount than usual. A one-off (a late fee)
+/// doesn't change what's expected next unless the person says so.
+nonisolated struct PriceChange: Decodable, Sendable, Hashable {
+    let charged: String
+    let usual: String
+    let next: String
+    /// Only the bill's latest payment decides what comes next.
+    let canSet: Bool
+
+    var keepsUsual: Bool { next == usual }
 }
 
 /// One part of a split purchase.

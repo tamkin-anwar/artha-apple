@@ -26,6 +26,7 @@ struct TransactionDetailView: View {
     @State private var choosingBill = false
     @State private var splitting = false
     @State private var isUnsplitting = false
+    @State private var isKeepingPrice = false
 
     var body: some View {
         Group {
@@ -142,6 +143,12 @@ struct TransactionDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
                 .padding(.top, -16)
+
+                if let change = tx.priceChange {
+                    PriceChangeCard(change: change, currency: tx.currency, isWorking: isKeepingPrice) {
+                        keepNewPrice(tx)
+                    }
+                }
 
                 if let charge = tx.pairedCharge {
                     PairedCard(charge: charge, isIncome: tx.type == "income", isWorking: isUnpairing) {
@@ -266,6 +273,22 @@ struct TransactionDetailView: View {
                 error = failure.message
             } catch {
                 self.error = "Artha couldn't save that. Try again in a moment."
+            }
+        }
+    }
+
+    private func keepNewPrice(_ tx: APITransaction) {
+        isKeepingPrice = true
+        error = nil
+        Task {
+            defer { isKeepingPrice = false }
+            do {
+                try await session.activity.keepNewPrice(tx)
+                dismiss()
+            } catch let failure as APIError {
+                error = failure.message
+            } catch {
+                self.error = "Artha couldn\u{2019}t save that. Try again in a moment."
             }
         }
     }
@@ -557,6 +580,63 @@ private struct SplitCard: View {
         .font(.system(.callout))
         .padding(.horizontal, 16)
         .padding(.top, 6)
+        .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
+    }
+}
+
+
+/// A bill charged something other than usual. One odd month (a late fee, a
+/// prorated first month) doesn't change what Artha expects next; the person
+/// can say it's the new price.
+private struct PriceChangeCard: View {
+    let change: PriceChange
+    let currency: String
+    let isWorking: Bool
+    let onKeep: () -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    private var charged: String { Money.cents(Decimal.api(change.charged), currency) }
+    private var usual: String { Money.cents(Decimal.api(change.usual), currency) }
+    private var isMore: Bool { Decimal.api(change.charged) > Decimal.api(change.usual) }
+
+    private var detail: String {
+        if !change.canSet { return "Charged \(charged) that time. It\u{2019}s usually \(usual)." }
+        if change.keepsUsual { return "Charged \(charged). It\u{2019}s usually \(usual), and that\u{2019}s what Artha expects next time." }
+        return "Artha expects \(charged) from now on."
+    }
+
+    var body: some View {
+        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+                                      : AnyLayout(HStackLayout(alignment: .top, spacing: 12))) {
+            Image(systemName: isMore ? "arrow.up.right" : "arrow.down.right")
+                .font(.system(.callout, weight: .semibold))
+                .foregroundStyle(Palette.caution)
+                .frame(width: 38, height: 38)
+                .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(isMore ? "Charged more than usual" : "Charged less than usual")
+                    .font(.system(.callout, weight: .semibold))
+                    .foregroundStyle(Palette.ink)
+                Text(detail)
+                    .font(.system(.subheadline))
+                    .foregroundStyle(Palette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if change.canSet, change.keepsUsual {
+                    Button(action: onKeep) {
+                        if isWorking { ProgressView() } else { Text("Expect \(charged) from Now On") }
+                    }
+                    .font(.system(.subheadline, weight: .semibold))
+                    .foregroundStyle(Palette.accent)
+                    .frame(minHeight: 44)
+                    .contentShape(.rect)
+                    .disabled(isWorking)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
         .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
     }
 }

@@ -219,6 +219,13 @@ final class ActivityModel {
         await onChange()
     }
 
+    /// The amount this bill was just charged is its price from now on.
+    func keepNewPrice(_ tx: APITransaction) async throws {
+        let _: TransactionEnvelope = try await api.post("transactions/\(tx.id)/new-price", body: [:])
+        await reload()
+        await onChange()
+    }
+
     /// Joins a split purchase back into one transaction.
     func unsplit(_ tx: APITransaction) async throws {
         let _: TransactionEnvelope = try await api.post("transactions/\(tx.id)/unsplit", body: [:])
