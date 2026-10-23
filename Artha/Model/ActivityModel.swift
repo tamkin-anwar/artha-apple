@@ -208,6 +208,24 @@ final class ActivityModel {
         await onChange()
     }
 
+    /// Splits a purchase across categories, or changes how it's split.
+    /// The parts must add up to the purchase exactly; the server checks.
+    func split(_ tx: APITransaction, into parts: [(amount: Decimal, category: String?)]) async throws {
+        let body: [String: Any] = ["parts": parts.map { part -> [String: Any] in
+            ["amount": NSDecimalNumber(decimal: part.amount).stringValue, "category": part.category ?? NSNull()]
+        }]
+        let _: TransactionEnvelope = try await api.post("transactions/\(tx.id)/split", body: body)
+        await reload()
+        await onChange()
+    }
+
+    /// Joins a split purchase back into one transaction.
+    func unsplit(_ tx: APITransaction) async throws {
+        let _: TransactionEnvelope = try await api.post("transactions/\(tx.id)/unsplit", body: [:])
+        await reload()
+        await onChange()
+    }
+
     /// The open bills a charge could have paid, likeliest first.
     func bills(for tx: APITransaction) async throws -> [APITransaction] {
         let choices: BillChoices = try await api.get("transactions/\(tx.id)/bills")

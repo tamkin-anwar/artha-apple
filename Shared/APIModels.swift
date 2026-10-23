@@ -105,6 +105,22 @@ nonisolated struct APITransaction: Decodable, Sendable, Identifiable, Hashable {
     let pairedCharge: String?
     /// A real charge that could still be paired with a bill by hand.
     let canPair: Bool?
+    /// One purchase split across categories: every part, in order. The
+    /// purchase's own amount is their total and its category is nil.
+    let split: [SplitPart]?
+    /// Whether it can be split (a bill's own row can't). Optional so an
+    /// older server or cached response still decodes.
+    let canSplit: Bool?
+
+    var isSplit: Bool { !(split ?? []).isEmpty }
+}
+
+/// One part of a split purchase.
+nonisolated struct SplitPart: Decodable, Sendable, Hashable, Identifiable {
+    let id: Int
+    let amount: String
+    let category: String?
+    let categoryLabel: String
 }
 
 /// GET transactions/{id}/bills: what a charge could have paid, likeliest first.

@@ -62,8 +62,9 @@ struct TransactionRow: View {
 /// The SF Symbol for each of the web app's categories
 /// (finance.routes.TRANSACTION_CATEGORIES).
 enum CategoryStyle {
-    static func symbol(for category: String?, type: String) -> String {
+    static func symbol(for category: String?, type: String, isSplit: Bool = false) -> String {
         if type == "income" { return "arrow.down.left" }
+        if isSplit { return "square.split.2x1" }
         switch category {
         case "groceries": return "cart"
         case "dining": return "fork.knife"

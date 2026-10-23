@@ -55,7 +55,7 @@ final class MonthModel {
             self.init(id: tx.id,
                       merchant: tx.description,
                       detail: detail,
-                      symbol: CategoryStyle.symbol(for: tx.category, type: tx.type),
+                      symbol: CategoryStyle.symbol(for: tx.category, type: tx.type, isSplit: tx.isSplit),
                       amount: Decimal.api(tx.amount),
                       currencyCode: tx.currency,
                       displayEquivalent: tx.displayAmount.map { Decimal.api($0) },

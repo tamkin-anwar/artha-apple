@@ -24,6 +24,8 @@ struct TransactionDetailView: View {
     @State private var confirmingUnpair = false
     @State private var isUnpairing = false
     @State private var choosingBill = false
+    @State private var splitting = false
+    @State private var isUnsplitting = false
 
     var body: some View {
         Group {
@@ -54,7 +56,7 @@ struct TransactionDetailView: View {
         ScrollView {
             VStack(spacing: 28) {
                 VStack(spacing: 10) {
-                    Image(systemName: CategoryStyle.symbol(for: category, type: type))
+                    Image(systemName: CategoryStyle.symbol(for: category, type: type, isSplit: tx.isSplit))
                         .font(.system(.title2, weight: .medium))
                         .frame(width: 56, height: 56)
                         .background(Palette.raised, in: .rect(cornerRadius: Radius.card))
@@ -68,6 +70,8 @@ struct TransactionDetailView: View {
                             .fixedSize()
                             .foregroundStyle(Palette.ink)
                             .accessibilityLabel("Amount")
+                            // A split purchase's amounts change in Split.
+                            .disabled(tx.isSplit)
                     }
                     .figureFont(52)
                     .lineLimit(1)
@@ -96,14 +100,16 @@ struct TransactionDetailView: View {
                         .pickerStyle(.menu)
                         .labelsHidden()
                     }
-                    Hairline()
-                    FieldRow("Category") {
-                        Picker("Category", selection: $category) {
-                            ForEach(categoryChoices) { Text($0.label).tag(Optional($0.key)) }
-                            Text("Uncategorized").tag(String?.none)
+                    if !tx.isSplit {
+                        Hairline()
+                        FieldRow("Category") {
+                            Picker("Category", selection: $category) {
+                                ForEach(categoryChoices) { Text($0.label).tag(Optional($0.key)) }
+                                Text("Uncategorized").tag(String?.none)
+                            }
+                            .pickerStyle(.menu)
+                            .labelsHidden()
                         }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
                     }
                     Hairline()
                     FieldRow("Date") {
@@ -147,6 +153,22 @@ struct TransactionDetailView: View {
                     }
                 }
 
+                if let parts = tx.split, !parts.isEmpty {
+                    SplitCard(parts: parts, currency: tx.currency, isWorking: isUnsplitting,
+                              onEdit: { splitting = true }, onUnsplit: { unsplit(tx) })
+                } else if tx.canSplit == true, tx.type == "expense", type == "expense" {
+                    Button {
+                        splitting = true
+                    } label: {
+                        Label("Split Across Categories", systemImage: "square.split.2x1")
+                    }
+                    .font(.system(.callout, weight: .semibold))
+                    .foregroundStyle(Palette.accent)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
+                    .accessibilityHint("Count parts of this purchase under different categories")
+                }
+
                 if tx.canPair == true {
                     Button {
                         choosingBill = true
@@ -185,6 +207,9 @@ struct TransactionDetailView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .animation(.snappy(duration: 0.3), value: category)
+        .sheet(isPresented: $splitting) {
+            SplitSheet(transaction: tx) { dismiss() }
+        }
     }
 
     // MARK: Editing
@@ -241,6 +266,22 @@ struct TransactionDetailView: View {
                 error = failure.message
             } catch {
                 self.error = "Artha couldn't save that. Try again in a moment."
+            }
+        }
+    }
+
+    private func unsplit(_ tx: APITransaction) {
+        isUnsplitting = true
+        error = nil
+        Task {
+            defer { isUnsplitting = false }
+            do {
+                try await session.activity.unsplit(tx)
+                dismiss()
+            } catch let failure as APIError {
+                error = failure.message
+            } catch {
+                self.error = "Artha couldn\u{2019}t join that back. Try again in a moment."
             }
         }
     }
@@ -460,5 +501,62 @@ private struct FieldRow<Control: View>: View {
 private struct Hairline: View {
     var body: some View {
         Rectangle().fill(Palette.ink.opacity(0.07)).frame(height: 1)
+    }
+}
+
+
+/// A split purchase's parts, each under its own category.
+private struct SplitCard: View {
+    let parts: [SplitPart]
+    let currency: String
+    let isWorking: Bool
+    let onEdit: () -> Void
+    let onUnsplit: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                SectionLabel("Split")
+                Spacer()
+                Button("Edit Split", action: onEdit)
+                    .font(.system(.callout, weight: .semibold))
+                    .foregroundStyle(Palette.accent)
+                    .frame(minHeight: 44)
+                    .contentShape(.rect)
+            }
+            ForEach(parts) { part in
+                HStack(spacing: 12) {
+                    Image(systemName: CategoryStyle.symbol(for: part.category, type: "expense"))
+                        .frame(width: 22)
+                        .foregroundStyle(Palette.secondary)
+                        .accessibilityHidden(true)
+                    Text(part.categoryLabel)
+                        .foregroundStyle(Palette.ink)
+                    Spacer(minLength: 8)
+                    Text(Money.cents(Decimal.api(part.amount), currency))
+                        .font(.system(.body, design: .rounded, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                .frame(minHeight: 44)
+                .accessibilityElement(children: .combine)
+                if part.id != parts.last?.id { Hairline() }
+            }
+            Button(action: onUnsplit) {
+                if isWorking { ProgressView() } else { Text("Unsplit") }
+            }
+            .font(.system(.callout, weight: .semibold))
+            .foregroundStyle(Palette.secondary)
+            .frame(minHeight: 44)
+            .contentShape(.rect)
+            .disabled(isWorking)
+            .accessibilityHint("Joins the parts back into one transaction")
+        }
+        .font(.system(.callout))
+        .padding(.horizontal, 16)
+        .padding(.top, 6)
+        .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
     }
 }
