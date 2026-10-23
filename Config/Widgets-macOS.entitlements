@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The Mac desktop widget: sandboxed like every Mac extension, reaches
+	     Artha's server for fresh numbers, and shares the App Group and the
+	     sign-in Keychain group with the Mac app (as on iPhone). -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.studio.anwarcreative.artha</string>
+	</array>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)studio.anwarcreative.artha.shared</string>
+	</array>
+</dict>
+</plist>

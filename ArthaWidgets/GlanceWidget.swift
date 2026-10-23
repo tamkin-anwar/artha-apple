@@ -12,10 +12,17 @@ struct GlanceWidget: Widget {
         }
         .configurationDisplayName("Safe to Spend")
         .description("What's safe to spend today, how the month is pacing, and what's coming up. Or pick spent this month or net worth.")
-        .supportedFamilies([
-            .systemSmall, .systemMedium, .systemLarge,
-            .accessoryCircular, .accessoryRectangular, .accessoryInline,
-        ])
+        .supportedFamilies(Self.families)
+    }
+
+    /// Desktop sizes on a Mac; the Lock Screen and StandBy ones too on
+    /// iPhone and iPad.
+    private static var families: [WidgetFamily] {
+        #if os(macOS)
+        [.systemSmall, .systemMedium, .systemLarge]
+        #else
+        [.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline]
+        #endif
     }
 }
 

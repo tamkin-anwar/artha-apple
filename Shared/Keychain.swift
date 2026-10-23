@@ -43,6 +43,12 @@ nonisolated enum Keychain {
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
         ]
         #if os(macOS)
+        // Into the group the desktop widget shares, when this build has it.
+        if let group = sharedGroup {
+            var shared = query
+            shared[kSecAttrAccessGroup as String] = group
+            if SecItemAdd(modern(shared) as CFDictionary, nil) == errSecSuccess { return }
+        }
         if SecItemAdd(modern(query) as CFDictionary, nil) == errSecSuccess { return }
         #endif
         if let group = sharedGroup {

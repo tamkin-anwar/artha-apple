@@ -9,10 +9,10 @@ nonisolated enum WidgetStore {
     static let appGroup = "group.studio.anwarcreative.artha"
     static let glanceKind = "Glance"
 
-    /// The simulator talks to the Mac's local dev server; a real device to
-    /// arthaapp.com. Same rule as APIClient.
+    /// The simulator and a Mac debug build talk to the Mac's local dev
+    /// server; a real device to arthaapp.com. Same rule as APIClient.
     static let baseURL: URL = {
-        #if targetEnvironment(simulator)
+        #if targetEnvironment(simulator) || (os(macOS) && DEBUG)
         URL(string: "http://localhost:5050/api/v1/")!
         #else
         URL(string: "https://arthaapp.com/api/v1/")!

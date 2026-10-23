@@ -13,11 +13,16 @@
 	<array>
 		<string>webcredentials:arthaapp.com</string>
 	</array>
-	<!-- Widgets aren't on the Mac yet, so the sign-in key stays in the
-	     app's own Keychain group. -->
+	<!-- Shared with the desktop widget: the latest numbers (App Group) and
+	     the sign-in key (the .shared Keychain group), as on iPhone. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.studio.anwarcreative.artha</string>
+	</array>
 	<key>keychain-access-groups</key>
 	<array>
 		<string>$(AppIdentifierPrefix)studio.anwarcreative.artha</string>
+		<string>$(AppIdentifierPrefix)studio.anwarcreative.artha.shared</string>
 	</array>
 </dict>
 </plist>

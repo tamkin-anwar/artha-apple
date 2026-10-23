@@ -127,7 +127,9 @@ struct GlanceView: View {
         }
         .containerBackground(for: .widget) {
             if family.isAccessory {
+                #if os(iOS)
                 AccessoryWidgetBackground().opacity(family == .accessoryCircular ? 1 : 0)
+                #endif
             } else {
                 Palette.surface
             }
@@ -141,17 +143,33 @@ struct GlanceView: View {
         case .systemSmall: SmallGlance(glance: glance)
         case .systemMedium: MediumGlance(glance: glance)
         case .systemLarge: LargeGlance(glance: glance)
+        #if os(iOS)
         case .accessoryCircular: CircularGlance(glance: glance)
         case .accessoryRectangular: RectangularGlance(glance: glance)
         case .accessoryInline: Text("\(Money.whole(glance.value, glance.code)) \(glance.label.lowercased())")
+        #endif
         default: SmallGlance(glance: glance)
         }
     }
 }
 
+// The Lock Screen sizes exist on iPhone and iPad only; a Mac has just the
+// desktop ones.
 private extension WidgetFamily {
     var isAccessory: Bool {
+        #if os(iOS)
         self == .accessoryCircular || self == .accessoryRectangular || self == .accessoryInline
+        #else
+        false
+        #endif
+    }
+
+    var isInline: Bool {
+        #if os(iOS)
+        self == .accessoryInline
+        #else
+        false
+        #endif
     }
 }
 
@@ -417,7 +435,7 @@ private struct Message: View {
     let family: WidgetFamily
 
     var body: some View {
-        if family == .accessoryInline {
+        if family.isInline {
             Text(text)
         } else if family.isAccessory {
             VStack(spacing: 2) {
