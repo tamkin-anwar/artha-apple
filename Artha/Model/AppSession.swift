@@ -386,8 +386,32 @@ final class AppSession {
 
     /// artha://add, artha://plan and so on.
     func open(_ url: URL) {
+        // A statement opened in Artha from Files, Mail or the share sheet.
+        if url.isFileURL {
+            statementToImport = url
+            route = .activity
+            return
+        }
         guard url.scheme == "artha", let route = AppRoute(rawValue: url.host() ?? "") else { return }
         self.route = route
+    }
+
+    /// A bank statement handed to Artha from outside (Open in Artha), read
+    /// in place and never copied; Activity picks it up and starts importing.
+    var statementToImport: URL?
+
+    /// Reads a statement without saving anything; the review comes next.
+    func previewStatement(_ file: Data, filename: String, password: String?) async throws -> StatementPreview {
+        let mime = filename.lowercased().hasSuffix(".pdf") ? "application/pdf" : "text/csv"
+        return try await api.upload("imports/preview", file: file, field: "statement", filename: filename,
+                                    mimeType: mime, fields: password.map { ["pdf_password": $0] } ?? [:])
+    }
+
+    /// Saves the rows kept in review, then refreshes everything they touch.
+    func importStatement(_ rows: [StatementRow]) async throws -> ImportResult {
+        let result: ImportResult = try await api.post("imports", body: ["rows": rows.map(\.asBody)])
+        await refreshAfterChange(reloadActivity: true)
+        return result
     }
 
     private func signOutLocally() {

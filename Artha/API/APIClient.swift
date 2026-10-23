@@ -102,13 +102,40 @@ final class APIClient {
         try decoder.decode(T.self, from: try await send(path, method: "DELETE", body: body))
     }
 
-    private func send(_ path: String, method: String, body: [String: Any]? = nil) async throws -> Data {
+    /// Uploads one file as multipart/form-data (a bank statement), with any
+    /// plain form fields alongside. The file goes straight from memory into
+    /// the request; nothing is written to disk on the way.
+    func upload<T: Decodable>(_ path: String, file: Data, field: String, filename: String, mimeType: String,
+                              fields: [String: String] = [:]) async throws -> T {
+        let boundary = "artha-\(UUID().uuidString)"
+        var body = Data()
+        func line(_ text: String) { body.append(Data((text + "\r\n").utf8)) }
+        for (name, value) in fields {
+            line("--\(boundary)")
+            line("Content-Disposition: form-data; name=\"\(name)\"")
+            line("")
+            line(value)
+        }
+        let safeName = filename.replacingOccurrences(of: "\"", with: "")
+        line("--\(boundary)")
+        line("Content-Disposition: form-data; name=\"\(field)\"; filename=\"\(safeName)\"")
+        line("Content-Type: \(mimeType)")
+        line("")
+        body.append(file)
+        line("")
+        line("--\(boundary)--")
+        let data = try await send(path, method: "POST", raw: (body, "multipart/form-data; boundary=\(boundary)"), timeout: 90)
+        return try decoder.decode(T.self, from: data)
+    }
+
+    private func send(_ path: String, method: String, body: [String: Any]? = nil,
+                      raw: (Data, String)? = nil, timeout: TimeInterval = 20) async throws -> Data {
         // `path` may carry its own query string ("transactions?q=coffee"),
         // which appending(path:) would percent-encode into the path itself.
         guard let url = URL(string: path, relativeTo: Self.baseURL) else { throw APIError.offline }
         var request = URLRequest(url: url)
         request.httpMethod = method
-        request.timeoutInterval = 20
+        request.timeoutInterval = timeout
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let token {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -116,6 +143,9 @@ final class APIClient {
         if let body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        } else if let (data, contentType) = raw {
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+            request.httpBody = data
         }
 
         let data: Data

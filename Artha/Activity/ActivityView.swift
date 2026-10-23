@@ -12,6 +12,7 @@ struct ActivityView: View {
     /// The transaction open beside the list on a wide screen.
     @State private var selectedID: Int?
     @State private var width: CGFloat = 0
+    @State private var isImporting = false
     @FocusState private var searchFocused: Bool
 
     private var isWide: Bool { width >= WideLayout.twoColumnWidth }
@@ -74,6 +75,7 @@ struct ActivityView: View {
         } message: {
             Text(activity.error ?? "")
         }
+        .statementImport(isPicking: $isImporting)
     }
 
     private var searchableList: some View {
@@ -85,6 +87,10 @@ struct ActivityView: View {
             .searchFocused($searchFocused)
             .onChange(of: session.searchRequest) { searchFocused = true }
             .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Import a Statement", systemImage: "square.and.arrow.down") { isImporting = true }
+                        .help("Import a PDF or CSV statement from your bank")
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Picker("Show", selection: $activity.filter) {

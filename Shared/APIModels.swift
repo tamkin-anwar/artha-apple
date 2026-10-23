@@ -112,6 +112,45 @@ nonisolated struct BillChoices: Decodable, Sendable {
     let bills: [APITransaction]
 }
 
+/// POST imports/preview: a statement read but not saved yet.
+nonisolated struct StatementPreview: Decodable, Sendable {
+    let rows: [StatementRow]
+    /// Lines the reader had to skip ("Row 14: skipped, no amount").
+    let warnings: [String]
+    /// Set when the layout was read with AI's help: worth a closer look.
+    let notice: String?
+}
+
+/// One line of a statement, as reviewed before importing. `include` and
+/// `id` are this device's own; the rest round-trips to POST imports.
+nonisolated struct StatementRow: Decodable, Sendable, Identifiable {
+    let id = UUID()
+    let date: String
+    var description: String
+    let amount: String
+    let type: String
+    var category: String?
+    var categoryLabel: String
+    let currency: String
+    /// Already in Artha (same date, name, amount and type): starts unticked.
+    let duplicate: Bool
+    var include = true
+
+    private enum CodingKeys: String, CodingKey {
+        case date, description, amount, type, category, categoryLabel, currency, duplicate
+    }
+
+    var asBody: [String: Any] {
+        ["date": date, "description": description, "amount": amount, "type": type,
+         "category": category ?? NSNull(), "currency": currency]
+    }
+}
+
+nonisolated struct ImportResult: Decodable, Sendable {
+    let imported: Int
+    let skipped: Int
+}
+
 /// POST transactions/{id}/unpair: the bill and the charge, apart again.
 nonisolated struct UnpairResponse: Decodable, Sendable {
     let bill: APITransaction
