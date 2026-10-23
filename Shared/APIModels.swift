@@ -97,6 +97,16 @@ nonisolated struct APITransaction: Decodable, Sendable, Identifiable, Hashable {
     /// Logged on its own (Apple Pay) and not looked at yet. Optional so a
     /// response cached before this field existed still decodes.
     let needsReview: Bool?
+    /// When Artha paired this bill with the real charge for it (so they
+    /// count once): that charge's own name. Nil when it isn't paired, or
+    /// can't be split back apart.
+    let pairedCharge: String?
+}
+
+/// POST transactions/{id}/unpair: the bill and the charge, apart again.
+nonisolated struct UnpairResponse: Decodable, Sendable {
+    let bill: APITransaction
+    let charge: APITransaction
 }
 
 nonisolated struct PlanSummary: Decodable, Sendable {

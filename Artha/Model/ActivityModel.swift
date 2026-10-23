@@ -200,6 +200,14 @@ final class ActivityModel {
         await onChange()
     }
 
+    /// Splits a bill and the charge Artha paired with it back into two
+    /// transactions. The charge isn't paired with a bill again on its own.
+    func unpair(_ tx: APITransaction) async throws {
+        let _: UnpairResponse = try await api.post("transactions/\(tx.id)/unpair", body: [:])
+        await reload()
+        await onChange()
+    }
+
     /// Hides the transaction now and deletes it once the undo window
     /// passes. Deleting another one first finishes this one straight away.
     func delete(_ tx: APITransaction) {

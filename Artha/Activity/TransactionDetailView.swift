@@ -21,6 +21,8 @@ struct TransactionDetailView: View {
     @State private var isSaving = false
     @State private var error: String?
     @State private var confirmingDelete = false
+    @State private var confirmingUnpair = false
+    @State private var isUnpairing = false
 
     var body: some View {
         Group {
@@ -134,6 +136,16 @@ struct TransactionDetailView: View {
                 .padding(.horizontal, 4)
                 .padding(.top, -16)
 
+                if let charge = tx.pairedCharge {
+                    PairedCard(charge: charge, isIncome: tx.type == "income", isWorking: isUnpairing) {
+                        confirmingUnpair = true
+                    }
+                    .confirmationDialog("Unpair these? Both will count again, and Artha won\u{2019}t pair this charge on its own again.",
+                                        isPresented: $confirmingUnpair, titleVisibility: .visible) {
+                        Button("Unpair") { unpair(tx) }
+                    }
+                }
+
                 Button("Delete Transaction", role: .destructive) {
                     confirmingDelete = true
                 }
@@ -216,9 +228,69 @@ struct TransactionDetailView: View {
         }
     }
 
+    private func unpair(_ tx: APITransaction) {
+        isUnpairing = true
+        error = nil
+        Task {
+            defer { isUnpairing = false }
+            do {
+                try await session.activity.unpair(tx)
+                dismiss()
+            } catch let failure as APIError {
+                error = failure.message
+            } catch {
+                self.error = "Artha couldn\u{2019}t split those. Try again in a moment."
+            }
+        }
+    }
+
     private static func apiDay(_ date: Date) -> String {
         let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+    }
+}
+
+/// A bill and the real charge for it, counted once
+/// (bill_matching on the server). Unpair splits them if Artha got it wrong.
+private struct PairedCard: View {
+    let charge: String
+    let isIncome: Bool
+    let isWorking: Bool
+    let unpair: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: "link")
+                .font(.system(.body, weight: .semibold))
+                .foregroundStyle(Palette.accent)
+                .frame(width: 38, height: 38)
+                .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(isIncome ? "Paired with its repeating income" : "Paired with its bill")
+                    .font(.system(.body, weight: .semibold))
+                    .foregroundStyle(Palette.ink)
+                Text("Artha matched \u{201C}\(charge)\u{201D} to this, so it counts once.")
+                    .font(.system(.footnote))
+                    .foregroundStyle(Palette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Group {
+                    if isWorking {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Button("Unpair", action: unpair)
+                            .font(.system(.callout, weight: .semibold))
+                            .foregroundStyle(Palette.accent)
+                            .buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, 4)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
+        .accessibilityElement(children: .contain)
     }
 }
 
