@@ -45,6 +45,9 @@ final class AppSession {
     /// Bumped by Search Transactions (Command-F) to put the cursor in
     /// Activity's search field.
     var searchRequest = 0
+    /// Opens the statement file picker (Activity's Import button, or
+    /// Import a Statement, Shift-Command-I).
+    var isPickingStatement = false
 
     let month = MonthModel()
     let activity: ActivityModel
@@ -402,7 +405,10 @@ final class AppSession {
 
     /// Reads a statement without saving anything; the review comes next.
     func previewStatement(_ file: Data, filename: String, password: String?) async throws -> StatementPreview {
-        let mime = filename.lowercased().hasSuffix(".pdf") ? "application/pdf" : "text/csv"
+        let name = filename.lowercased()
+        let mime = name.hasSuffix(".pdf") ? "application/pdf"
+            : name.hasSuffix(".csv") ? "text/csv"
+            : "application/octet-stream" // OFX, QFX, QIF: the server reads what's inside
         return try await api.upload("imports/preview", file: file, field: "statement", filename: filename,
                                     mimeType: mime, fields: password.map { ["pdf_password": $0] } ?? [:])
     }

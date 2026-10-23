@@ -48,6 +48,7 @@ struct LimitSheet: View {
                         Text(categoryLabel ?? "Choose a category")
                         Image(systemName: "chevron.up.chevron.down")
                             .font(.system(.caption, weight: .semibold))
+                            .accessibilityHidden(true)
                     }
                     .font(.system(.callout, weight: .semibold))
                     .padding(.horizontal, 16)

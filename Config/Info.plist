@@ -59,7 +59,56 @@
 			<array>
 				<string>com.adobe.pdf</string>
 				<string>public.comma-separated-values-text</string>
+				<string>studio.anwarcreative.artha.ofx</string>
+				<string>studio.anwarcreative.artha.qif</string>
 			</array>
+		</dict>
+	</array>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>studio.anwarcreative.artha.ofx</string>
+			<key>UTTypeDescription</key>
+			<string>OFX bank statement</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>ofx</string>
+					<string>qfx</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/x-ofx</string>
+					<string>application/vnd.intu.qfx</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>studio.anwarcreative.artha.qif</string>
+			<key>UTTypeDescription</key>
+			<string>QIF bank statement</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>qif</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/qif</string>
+				</array>
+			</dict>
 		</dict>
 	</array>
 	<key>LSSupportsOpeningDocumentsInPlace</key>

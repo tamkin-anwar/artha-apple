@@ -281,7 +281,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/Artha.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/Artha-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 7GGTC43CG8;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -321,7 +321,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/Artha.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/Artha-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 7GGTC43CG8;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -359,7 +359,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/Widgets.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/Widgets-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 7GGTC43CG8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/Widgets-Info.plist";
@@ -395,7 +395,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/Widgets.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/Widgets-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 7GGTC43CG8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/Widgets-Info.plist";

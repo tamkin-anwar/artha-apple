@@ -58,11 +58,15 @@ struct ReviewCard: View {
 /// answer is kept on the account, so it never comes back.
 struct PacePromptCard: View {
     @Environment(AppSession.self) private var session
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var answering = false
     @State private var error: String?
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        // At accessibility sizes the icon sits above the words, so they
+        // get the card's whole width.
+        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+                                      : AnyLayout(HStackLayout(alignment: .top, spacing: 12))) {
             Image(systemName: "bell.badge")
                 .font(.system(.callout, weight: .semibold))
                 .foregroundStyle(Palette.accent)
@@ -83,18 +87,21 @@ struct PacePromptCard: View {
                         .foregroundStyle(Palette.caution)
                         .announcedWhenShown(error)
                 }
-                HStack(spacing: 20) {
+                (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
+                                              : AnyLayout(HStackLayout(spacing: 20))) {
                     Button("Turn On") { answer(true) }
                         .foregroundStyle(Palette.accent)
+                        .frame(minHeight: 44)
                     Button("Not Now") { answer(false) }
                         .foregroundStyle(Palette.secondary)
+                        .frame(minHeight: 44)
                 }
                 .font(.system(.subheadline, weight: .semibold))
-                .frame(minHeight: 36)
                 .disabled(answering)
             }
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
         .motionTransition(.opacity.combined(with: .move(edge: .top)))
@@ -137,14 +144,17 @@ private struct StateCard: View {
     var tint: Color = Palette.caution
     var action: String? = nil
     var perform: () -> Void = {}
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+                                      : AnyLayout(HStackLayout(alignment: .top, spacing: 12))) {
             Image(systemName: symbol)
                 .font(.system(.callout, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: 38, height: 38)
                 .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.system(.callout, weight: .semibold))
@@ -157,11 +167,12 @@ private struct StateCard: View {
                     Button(action, action: perform)
                         .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(Palette.accent)
-                        .frame(minHeight: 36)
+                        .frame(minHeight: 44)
                 }
             }
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
         .motionTransition(.opacity.combined(with: .move(edge: .top)))
@@ -213,6 +224,7 @@ struct FirstDay: View {
                     Image(systemName: "chevron.right")
                         .font(.system(.footnote, weight: .semibold))
                         .foregroundStyle(Palette.secondary)
+                        .accessibilityHidden(true)
                 }
                 .padding(16)
                 .contentShape(Rectangle())

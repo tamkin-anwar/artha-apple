@@ -8,6 +8,10 @@
 	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
+	<!-- Read a bank statement the person picks to import. Without it the
+	     sandbox won't show the open panel at all, and says nothing. -->
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
 	<!-- Saved arthaapp.com passwords fill in here too. -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>

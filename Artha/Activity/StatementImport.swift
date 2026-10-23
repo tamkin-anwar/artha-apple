@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Importing a bank statement (a PDF or CSV) from the app, the same way as
+/// Importing a bank statement (PDF, CSV, OFX/QFX or QIF) from the app, the same way as
 /// on the website: the server reads it (in memory, never stored), the
 /// person reviews every row, and nothing is saved until they tap Import.
 /// The file is read straight from where it is, inside a security-scoped
@@ -31,16 +31,24 @@ struct StatementImport: ViewModifier {
         var rows: [StatementRow]
         let warnings: [String]
         let notice: String?
+        let totals: String?
     }
+
+    /// Every kind of statement file a bank exports. OFX/QFX and QIF are
+    /// declared in Info.plist, so they resolve to real types here.
+    static let fileTypes: [UTType] = [.pdf, .commaSeparatedText, .plainText]
+        + ["ofx", "qfx", "qif"].compactMap { UTType(filenameExtension: $0) }
 
     func body(content: Content) -> some View {
         content
             .fileImporter(isPresented: $isPicking,
-                          allowedContentTypes: [.pdf, .commaSeparatedText, .plainText]) { result in
+                          allowedContentTypes: Self.fileTypes) { result in
                 if case .success(let url) = result { read(url) }
             }
-            .onChange(of: session.statementToImport, initial: true) { _, url in
-                guard let url else { return }
+            .onChange(of: session.statementToImport, initial: true) {
+                // Taken off the session as it's read, so the statement is
+                // only ever read (and maybe sent to AI) once.
+                guard let url = session.statementToImport else { return }
                 session.statementToImport = nil
                 read(url)
             }
@@ -98,9 +106,9 @@ struct StatementImport: ViewModifier {
                 let result = try await session.previewStatement(file.data, filename: file.name, password: password)
                 review = Review(rows: result.rows.map { row in
                     var row = row
-                    row.include = !row.duplicate
+                    row.include = !row.duplicate && !row.isTransfer
                     return row
-                }, warnings: result.warnings, notice: result.notice)
+                }, warnings: result.warnings, notice: result.notice, totals: result.totals)
             } catch APIError.rejected(let code, let text) where code == "needs_password" || code == "wrong_password" {
                 self.password = ""
                 lockMessage = code == "wrong_password" ? text : "Your bank locked this statement. Enter its password to read it."
@@ -136,6 +144,22 @@ private struct StatementReview: View {
     var body: some View {
         NavigationStack {
             List {
+                if let totals = review.totals {
+                    Section {
+                        // The statement's own totals: proof nothing was
+                        // missed, or a heads-up that something was.
+                        if totals == "match" {
+                            Label("Every transaction adds up to your statement\u{2019}s totals.", systemImage: "checkmark.seal.fill")
+                                .foregroundStyle(Palette.good)
+                        } else {
+                            Label("These don\u{2019}t add up to your statement\u{2019}s totals, so something may be missing. Compare with your statement before importing.",
+                                  systemImage: "exclamationmark.triangle.fill")
+                                .foregroundStyle(Palette.caution)
+                        }
+                    }
+                    .font(.system(.subheadline))
+                    .listRowBackground(Palette.surface)
+                }
                 if let notice = review.notice {
                     Section {
                         Label(notice, systemImage: "sparkles")
@@ -159,6 +183,9 @@ private struct StatementReview: View {
                         }
                         if review.rows.contains(where: \.duplicate) {
                             Text("Rows already in Artha start unticked, so nothing counts twice.")
+                        }
+                        if review.rows.contains(where: { $0.isTransfer && !$0.duplicate }) {
+                            Text("Moves between your own accounts start unticked too: they aren\u{2019}t spending or income.")
                         }
                         if let error {
                             Text(error).foregroundStyle(Palette.caution).announcedWhenShown(error)
@@ -214,6 +241,7 @@ private struct StatementReview: View {
 private struct StatementRowView: View {
     @Binding var row: StatementRow
     let categories: [CategoryList.Category]
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var isIncome: Bool { row.type == "income" }
 
@@ -226,6 +254,9 @@ private struct StatementRowView: View {
                     .font(.system(.title3))
                     .foregroundStyle(row.include ? Palette.accent : Palette.secondary)
                     .contentTransition(.symbolEffect(.replace))
+                    // The whole 44-point square answers the tap, not just the circle.
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(.rect)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(row.include ? "Included" : "Left out")
@@ -235,7 +266,7 @@ private struct StatementRowView: View {
                 // Statement names run long ("SQ *BLUE BOTTLE COFFEE SF CA").
                 Text(row.description)
                     .foregroundStyle(row.include ? Palette.ink : Palette.secondary)
-                    .lineLimit(2)
+                    .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {
                     Text(Date.apiDay(row.date)?.formatted(.dateTime.month(.abbreviated).day()) ?? row.date)
@@ -252,12 +283,15 @@ private struct StatementRowView: View {
                             HStack(spacing: 2) {
                                 Text(row.categoryLabel)
                                 Image(systemName: "chevron.up.chevron.down").font(.system(.caption2, weight: .semibold))
+                                    .accessibilityHidden(true)
                             }
                             .foregroundStyle(Palette.accent)
                         }
                         .menuStyle(.button)
                         .buttonStyle(.plain)
                         .fixedSize()
+                        .accessibilityLabel("Category")
+                        .accessibilityValue(row.categoryLabel)
                     }
                 }
                 .font(.system(.footnote))
@@ -267,20 +301,35 @@ private struct StatementRowView: View {
                     Text("Already in Artha")
                         .font(.system(.footnote))
                         .foregroundStyle(Palette.secondary)
+                } else if row.isTransfer {
+                    Text("Between your own accounts")
+                        .font(.system(.footnote))
+                        .foregroundStyle(Palette.secondary)
                 }
+                // At the largest text sizes the amount moves under the
+                // name, so neither gets squeezed to a sliver.
+                if typeSize.isAccessibilitySize { amount }
             }
             .layoutPriority(1)
 
-            Spacer(minLength: 8)
-
-            Text((isIncome ? "+" : "") + Money.cents(Decimal.api(row.amount), row.currency))
-                .font(.system(.body, design: .rounded, weight: .semibold))
-                .monospacedDigit()
-                .foregroundStyle(row.include ? Palette.ink : Palette.secondary)
+            if !typeSize.isAccessibilitySize {
+                Spacer(minLength: 8)
+                amount
+            }
         }
         .padding(.vertical, 2)
         .contentShape(.rect)
         .listRowBackground(Palette.surface)
+    }
+
+    private var amount: some View {
+        Text((isIncome ? "+" : "") + Money.cents(Decimal.api(row.amount), row.currency))
+            .font(.system(.body, design: .rounded, weight: .semibold))
+            .monospacedDigit()
+            .foregroundStyle(row.include ? Palette.ink : Palette.secondary)
+            // An amount never breaks across lines; the name wraps instead.
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
     }
 
     private var categoryBinding: Binding<String?> {

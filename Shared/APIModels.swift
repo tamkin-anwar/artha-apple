@@ -119,6 +119,9 @@ nonisolated struct StatementPreview: Decodable, Sendable {
     let warnings: [String]
     /// Set when the layout was read with AI's help: worth a closer look.
     let notice: String?
+    /// "match" when the rows add up to the statement's own totals,
+    /// "mismatch" when they don't, nil when the file doesn't print any.
+    let totals: String?
 }
 
 /// One line of a statement, as reviewed before importing. `include` and
@@ -132,12 +135,18 @@ nonisolated struct StatementRow: Decodable, Sendable, Identifiable {
     var category: String?
     var categoryLabel: String
     let currency: String
-    /// Already in Artha (same date, name, amount and type): starts unticked.
+    /// Already in Artha (the same purchase, maybe logged with Apple Pay):
+    /// starts unticked.
     let duplicate: Bool
+    /// Money moving between the person's own accounts, not spending or
+    /// income: starts unticked too. Optional so an older server still decodes.
+    let transfer: Bool?
     var include = true
 
+    var isTransfer: Bool { transfer ?? false }
+
     private enum CodingKeys: String, CodingKey {
-        case date, description, amount, type, category, categoryLabel, currency, duplicate
+        case date, description, amount, type, category, categoryLabel, currency, duplicate, transfer
     }
 
     var asBody: [String: Any] {

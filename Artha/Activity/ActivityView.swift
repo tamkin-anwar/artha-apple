@@ -12,15 +12,36 @@ struct ActivityView: View {
     /// The transaction open beside the list on a wide screen.
     @State private var selectedID: Int?
     @State private var width: CGFloat = 0
-    @State private var isImporting = false
     @FocusState private var searchFocused: Bool
 
-    private var isWide: Bool { width >= WideLayout.twoColumnWidth }
+    private var isWide: Bool {
+        #if os(macOS)
+        // Always two columns on a Mac. Choosing by measured width started
+        // at zero, picked one column, and the tab sidebar took the room.
+        true
+        #else
+        width >= WideLayout.twoColumnWidth
+        #endif
+    }
 
     var body: some View {
         let activity = session.activity
         Group {
             if isWide {
+                #if os(macOS)
+                // A Mac window already has the tab sidebar as a column, and a
+                // second split view inside it fought it for width: with the
+                // sidebar dragged wide, its labels slid out of the window and
+                // the detail ran off the right edge. A plain row has no
+                // column widths of its own to fight over.
+                HStack(spacing: 0) {
+                    NavigationStack { searchableList }
+                        .frame(minWidth: 300, idealWidth: 380, maxWidth: 380)
+                    Divider()
+                    detail
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                #else
                 // Wide (iPad, landscape): the list and the open transaction
                 // side by side, the way Mail and Notes work.
                 NavigationSplitView {
@@ -29,18 +50,10 @@ struct ActivityView: View {
                         // where it sits beside the window's own sidebar.
                         .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 480)
                 } detail: {
-                    NavigationStack {
-                        if let id = selectedID, session.activity.transaction(id: id) != nil {
-                            TransactionDetailView(transactionID: id).id(id)
-                        } else {
-                            ContentUnavailableView("No transaction selected", systemImage: "list.bullet",
-                                                   description: Text("Pick one from the list to see it or change it."))
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .background(Palette.ground)
-                        }
-                    }
+                    detail
                 }
                 .navigationSplitViewStyle(.balanced)
+                #endif
             } else {
                 NavigationStack(path: $path) {
                     searchableList
@@ -75,7 +88,6 @@ struct ActivityView: View {
         } message: {
             Text(activity.error ?? "")
         }
-        .statementImport(isPicking: $isImporting)
     }
 
     private var searchableList: some View {
@@ -88,7 +100,7 @@ struct ActivityView: View {
             .onChange(of: session.searchRequest) { searchFocused = true }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Import a Statement", systemImage: "square.and.arrow.down") { isImporting = true }
+                    Button("Import a Statement", systemImage: "square.and.arrow.down") { session.isPickingStatement = true }
                         .help("Import a PDF or CSV statement from your bank")
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -103,6 +115,20 @@ struct ActivityView: View {
                     }
                 }
             }
+    }
+
+    /// The transaction open beside the list on a wide screen.
+    private var detail: some View {
+        NavigationStack {
+            if let id = selectedID, session.activity.transaction(id: id) != nil {
+                TransactionDetailView(transactionID: id).id(id)
+            } else {
+                ContentUnavailableView("No transaction selected", systemImage: "list.bullet",
+                                       description: Text("Pick one from the list to see it or change it."))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Palette.ground)
+            }
+        }
     }
 
     private func open(_ id: Int) {

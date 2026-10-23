@@ -278,6 +278,7 @@ private struct PairBillSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var bills: [APITransaction]?
     @State private var working: Int?
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var error: String?
 
     private var isIncome: Bool { transaction.type == "income" }
@@ -328,19 +329,21 @@ private struct PairBillSheet: View {
     }
 
     private func row(_ bill: APITransaction) -> some View {
-        Button {
+        let stacked = typeSize.isAccessibilitySize
+        return Button {
             pair(with: bill)
         } label: {
-            HStack(spacing: 12) {
+            // Name above amount at the largest text sizes.
+            (stacked ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6)) : AnyLayout(HStackLayout(spacing: 12))) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(bill.description)
                         .foregroundStyle(Palette.ink)
-                        .lineLimit(1)
+                        .lineLimit(stacked ? nil : 1)
                     Text(Date.apiDay(bill.date)?.formatted(.dateTime.month(.abbreviated).day()) ?? "")
                         .font(.system(.footnote))
                         .foregroundStyle(Palette.secondary)
                 }
-                Spacer(minLength: 8)
+                if !stacked { Spacer(minLength: 8) }
                 if working == bill.id {
                     ProgressView()
                 } else {
@@ -414,17 +417,20 @@ private struct PairedCard: View {
                     if isWorking {
                         ProgressView().controlSize(.small)
                     } else {
-                        Button("Unpair", action: unpair)
-                            .font(.system(.callout, weight: .semibold))
-                            .foregroundStyle(Palette.accent)
-                            .buttonStyle(.plain)
+                        Button(action: unpair) {
+                            Text("Unpair")
+                                .frame(minHeight: 44, alignment: .leading)
+                                .contentShape(.rect)
+                        }
+                        .font(.system(.callout, weight: .semibold))
+                        .foregroundStyle(Palette.accent)
+                        .buttonStyle(.plain)
                     }
                 }
-                .padding(.top, 4)
             }
             Spacer(minLength: 0)
         }
-        .padding(16)
+        .padding(EdgeInsets(top: 16, leading: 16, bottom: 6, trailing: 16))
         .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
         .accessibilityElement(children: .contain)
     }

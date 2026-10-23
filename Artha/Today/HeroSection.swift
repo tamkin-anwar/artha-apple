@@ -20,6 +20,7 @@ struct HeroSection: View {
                     Text(month.heroMetric.rawValue)
                     Image(systemName: "chevron.down")
                         .font(.system(.caption, weight: .bold))
+                        .accessibilityHidden(true)
                 }
                 .font(.system(.subheadline, weight: .semibold))
                 .foregroundStyle(Palette.secondary)
@@ -28,6 +29,8 @@ struct HeroSection: View {
             // The label draws its own chevron; a Mac would add a second.
             .menuIndicator(.hidden)
             .buttonStyle(.plain)
+            .accessibilityLabel("Show on Today")
+            .accessibilityValue(month.heroMetric.rawValue)
 
             Text(Money.whole(month.heroValue, month.currencyCode))
                 .figureFont(76)

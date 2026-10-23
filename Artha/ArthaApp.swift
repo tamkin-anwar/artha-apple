@@ -109,6 +109,12 @@ struct ArthaApp: App {
                     .disabled(!signedIn || session.month.toReview == 0)
                 Button("Set Budget…", systemImage: "slider.horizontal.3") { session.isEditingBudget = true }
                     .disabled(!signedIn)
+                Button("Import a Statement…", systemImage: "square.and.arrow.down") {
+                    session.route = .activity
+                    session.isPickingStatement = true
+                }
+                .keyboardShortcut("i", modifiers: [.command, .shift])
+                .disabled(!signedIn)
             }
         }
     }
@@ -271,6 +277,10 @@ struct MainTabs: View {
         .sheet(isPresented: $session.isShowingSettings) {
             SettingsView()
         }
+        // Once, here, not on Activity: the Mac builds a tab's view more
+        // than once while it settles, and a copy that gets thrown away
+        // would take an opened statement, and its review, with it.
+        .statementImport(isPicking: $session.isPickingStatement)
         .sheet(isPresented: $session.isReviewing, onDismiss: {
             Task { await session.refreshAfterReview() }
         }) {

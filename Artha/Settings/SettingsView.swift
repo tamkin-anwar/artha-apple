@@ -159,6 +159,7 @@ struct SettingsView: View {
                     Image(systemName: "chevron.right")
                         .font(.system(.footnote, weight: .semibold))
                         .foregroundStyle(Palette.secondary.opacity(0.6))
+                        .accessibilityHidden(true)
                 }
             }
             .buttonStyle(.plain)
