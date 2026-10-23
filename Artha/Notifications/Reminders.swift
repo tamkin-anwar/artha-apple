@@ -19,6 +19,7 @@ import UserNotifications
 enum Reminders {
     static let applePayKey = "notify.applePay"
     private static let alertedKey = "notify.budgetAlerted"
+    private static let paceKey = "notify.paceAlerted"
     private static let billPrefix = "bill."
     private static let log = Logger(subsystem: "studio.anwarcreative.artha", category: "Reminders")
 
@@ -129,6 +130,33 @@ enum Reminders {
             UNNotificationRequest(identifier: "budget.\(month).\(alerted.sorted().joined(separator: "-"))", content: content, trigger: nil))
     }
 
+    // MARK: Pace
+
+    /// A heads-up, once a month, when spending first runs ahead of an even
+    /// pace and there's still room to ease off (the server's status
+    /// "ahead"; "over" is checkBudget's). Only for someone who turned it
+    /// on, never before the 5th, and re-armed once spending is back at an
+    /// even pace, like the website's push.
+    static func checkPace(_ summary: TodaySummary, user: APIUser) async {
+        guard user.notifyPaceHeadsUp == true, let safe = summary.safeToSpend, await allowed() else { return }
+        let month = String(summary.date.prefix(7))
+        let defaults = UserDefaults.standard
+        if defaults.string(forKey: paceKey) == month {
+            if Decimal.api(summary.spent) <= Decimal.api(safe.evenPaceSpent) { defaults.removeObject(forKey: paceKey) }
+            return
+        }
+        guard safe.status == "ahead", summary.month.day >= 5 else { return }
+        defaults.set(month, forKey: paceKey)
+
+        let content = UNMutableNotificationContent()
+        content.title = "Heads-up"
+        content.body = "You're ahead of pace for \(summary.month.name). Up to \(Money.whole(Decimal.api(safe.perDay), summary.currency)) a day keeps it on plan."
+        content.threadIdentifier = "budget"
+        content.userInfo = ["route": "plan"]
+        try? await UNUserNotificationCenter.current().add(
+            UNNotificationRequest(identifier: "pace.\(month)", content: content, trigger: nil))
+    }
+
     // MARK: Apple Pay
 
     /// Right after a purchase logs itself: what it was, and where the
@@ -151,5 +179,6 @@ enum Reminders {
         center.removeAllPendingNotificationRequests()
         center.removeAllDeliveredNotifications()
         UserDefaults.standard.removeObject(forKey: alertedKey)
+        UserDefaults.standard.removeObject(forKey: paceKey)
     }
 }

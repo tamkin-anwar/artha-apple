@@ -215,6 +215,16 @@ final class AppSession {
         guard let summary = month.summary, let user else { return }
         await Reminders.scheduleBills(summary, user: user)
         await Reminders.checkBudget(summary, limits: plan.limits, user: user)
+        await Reminders.checkPace(summary, user: user)
+    }
+
+    /// Answers Today's one-time pace heads-up card. Turning it on also asks
+    /// for notifications, since that's how it arrives. Either answer is
+    /// kept on the account, so the card doesn't come back on any device.
+    func answerPacePrompt(turnOn: Bool) async throws {
+        if turnOn { _ = await Reminders.askForBanners() }
+        try await updateProfile(["notify_pace_heads_up": turnOn, "pace_prompt_answered": true])
+        await refresh()
     }
 
     /// A background refresh: the numbers, then reminders and widgets, with

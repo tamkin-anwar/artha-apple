@@ -53,6 +53,67 @@ struct ReviewCard: View {
     }
 }
 
+/// Offered once to someone with a budget: a heads-up partway through the
+/// month when spending runs ahead of pace. Off unless they say yes; either
+/// answer is kept on the account, so it never comes back.
+struct PacePromptCard: View {
+    @Environment(AppSession.self) private var session
+    @State private var answering = false
+    @State private var error: String?
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "bell.badge")
+                .font(.system(.callout, weight: .semibold))
+                .foregroundStyle(Palette.accent)
+                .frame(width: 38, height: 38)
+                .background(Palette.raised, in: .rect(cornerRadius: Radius.small))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Want a heads-up before you go over?")
+                    .font(.system(.callout, weight: .semibold))
+                    .foregroundStyle(Palette.ink)
+                Text("Artha can tell you partway through the month when you're spending ahead of pace, while there's still time to ease off.")
+                    .font(.system(.subheadline))
+                    .foregroundStyle(Palette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let error {
+                    Text(error)
+                        .font(.system(.subheadline))
+                        .foregroundStyle(Palette.caution)
+                        .announcedWhenShown(error)
+                }
+                HStack(spacing: 20) {
+                    Button("Turn On") { answer(true) }
+                        .foregroundStyle(Palette.accent)
+                    Button("Not Now") { answer(false) }
+                        .foregroundStyle(Palette.secondary)
+                }
+                .font(.system(.subheadline, weight: .semibold))
+                .frame(minHeight: 36)
+                .disabled(answering)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
+        .motionTransition(.opacity.combined(with: .move(edge: .top)))
+    }
+
+    private func answer(_ on: Bool) {
+        answering = true
+        error = nil
+        Task {
+            defer { answering = false }
+            do {
+                try await session.answerPacePrompt(turnOn: on)
+            } catch {
+                self.error = "Artha couldn\u{2019}t save that. Try again in a moment."
+            }
+        }
+    }
+}
+
 /// Charges that repeat like bills but aren't tracked. Plan lists them,
 /// with Track it and Not a bill.
 struct BillSuggestionsCard: View {

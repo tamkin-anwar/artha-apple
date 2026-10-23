@@ -121,6 +121,7 @@ final class MonthModel {
     /// Purchases that logged themselves and are waiting for a look.
     var toReview: Int { summary?.toReview ?? 0 }
     var billSuggestions: Int { summary?.billSuggestions ?? 0 }
+    var pacePrompt: Bool { summary?.pacePrompt ?? false }
     /// Set once Apple Pay has logged something on its own: the automation works.
     var applePay: TodaySummary.ApplePayStatus? { summary?.applePay }
     var today: Int { summary?.month.day ?? 1 }

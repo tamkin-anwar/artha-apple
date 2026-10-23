@@ -18,6 +18,8 @@ nonisolated struct APIUser: Decodable, Sendable {
     /// saved copy from before these existed still decodes.
     let notifyBillsDue: Bool?
     let notifyBudgetAlerts: Bool?
+    /// The heads-up when spending runs ahead of pace. Off unless turned on.
+    let notifyPaceHeadsUp: Bool?
     let reminderHour: Int?
 
     var initials: String {
@@ -333,6 +335,8 @@ nonisolated struct TodaySummary: Decodable, Sendable {
     let applePay: ApplePayStatus?
     /// How many charges look like bills nobody tracks yet (Plan lists them).
     let billSuggestions: Int?
+    /// Offer the pace heads-up (once, to someone with a budget).
+    let pacePrompt: Bool?
 
     nonisolated struct ApplePayStatus: Decodable, Sendable {
         let description: String

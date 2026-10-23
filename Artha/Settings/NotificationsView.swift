@@ -23,6 +23,9 @@ struct NotificationsView: View {
                     Toggle(isOn: binding(\.notifyBudgetAlerts, key: "notify_budget_alerts", user: user)) {
                         Label("Over budget", systemImage: "exclamationmark.circle")
                     }
+                    Toggle(isOn: binding(\.notifyPaceHeadsUp, key: "notify_pace_heads_up", user: user, default: false)) {
+                        Label("Ahead of pace", systemImage: "gauge.with.needle")
+                    }
                     if ThisDevice.canAutomateApplePay {
                         Toggle(isOn: $applePay) {
                             Label("Apple Pay purchases", systemImage: "wave.3.right")
@@ -41,7 +44,7 @@ struct NotificationsView: View {
                     if let error {
                         Text(error).foregroundStyle(Palette.caution).announcedWhenShown(error)
                     } else {
-                        Text("A bill reminder comes the day before it's due. Budget alerts come once a month per budget, the moment it's reached. The bill and budget settings and the time also apply on arthaapp.com.")
+                        Text("A bill reminder comes the day before it's due. Budget alerts come once a month per budget, the moment it's reached. Ahead of pace is a heads-up partway through the month, while there's still time to ease off. The bill and budget settings and the time also apply on arthaapp.com.")
                     }
                 }
                 .listRowBackground(Palette.surface)
@@ -101,9 +104,9 @@ struct NotificationsView: View {
     // MARK: Saving
 
     /// A switch saved to the account (shared with the website).
-    private func binding(_ keyPath: KeyPath<APIUser, Bool?>, key: String, user: APIUser) -> Binding<Bool> {
+    private func binding(_ keyPath: KeyPath<APIUser, Bool?>, key: String, user: APIUser, default fallback: Bool = true) -> Binding<Bool> {
         Binding(
-            get: { session.user?[keyPath: keyPath] ?? true },
+            get: { session.user?[keyPath: keyPath] ?? fallback },
             set: { value in save([key: value]) }
         )
     }
