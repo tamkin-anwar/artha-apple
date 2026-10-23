@@ -26,17 +26,6 @@ struct GlanceWidget: Widget {
     }
 }
 
-enum GlanceMetric: String, AppEnum {
-    case safeToSpend, spent, netWorth
-
-    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Number"
-    static let caseDisplayRepresentations: [GlanceMetric: DisplayRepresentation] = [
-        .safeToSpend: "Safe to spend",
-        .spent: "Spent this month",
-        .netWorth: "Net worth",
-    ]
-}
-
 struct GlanceConfiguration: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "Artha at a glance"
     static let description = IntentDescription("Choose the number this widget leads with.")
@@ -64,7 +53,7 @@ struct GlanceProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: GlanceConfiguration, in context: Context) async -> GlanceEntry {
-        if context.isPreview, cachedSummary() == nil {
+        if context.isPreview, TodayNumbers.cached() == nil {
             return GlanceEntry(date: .now, metric: configuration.metric, state: .ready(.sample))
         }
         return await entry(for: configuration)
@@ -85,47 +74,13 @@ struct GlanceProvider: AppIntentTimelineProvider {
     }
 
     private func entry(for configuration: GlanceConfiguration) async -> GlanceEntry {
-        guard let token = Keychain.read(account: Keychain.tokenAccount) else {
-            return GlanceEntry(date: .now, metric: configuration.metric, state: .signedOut)
-        }
-        switch await fetchToday(token: token) {
-        case .success(let summary):
-            return GlanceEntry(date: .now, metric: configuration.metric, state: .ready(summary))
+        switch await TodayNumbers.load() {
+        case .ready(let summary, _):
+            GlanceEntry(date: .now, metric: configuration.metric, state: .ready(summary))
         case .signedOut:
-            return GlanceEntry(date: .now, metric: configuration.metric, state: .signedOut)
-        case .failed:
-            // Offline or the server's slow: show the last numbers the app
-            // or a previous refresh saved, rather than nothing.
-            if let cached = cachedSummary() {
-                return GlanceEntry(date: .now, metric: configuration.metric, state: .ready(cached))
-            }
-            return GlanceEntry(date: .now, metric: configuration.metric, state: .unavailable)
+            GlanceEntry(date: .now, metric: configuration.metric, state: .signedOut)
+        case .unavailable:
+            GlanceEntry(date: .now, metric: configuration.metric, state: .unavailable)
         }
-    }
-
-    private enum FetchResult { case success(TodaySummary), signedOut, failed }
-
-    private func fetchToday(token: String) async -> FetchResult {
-        var request = URLRequest(url: WidgetStore.baseURL.appending(path: "today"))
-        request.timeoutInterval = 12
-        request.cachePolicy = .reloadIgnoringLocalCacheData
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
-              let status = (response as? HTTPURLResponse)?.statusCode else { return .failed }
-        if status == 401 { return .signedOut }
-        guard status == 200, let summary = Self.decode(data) else { return .failed }
-        WidgetStore.saveToday(data)
-        return .success(summary)
-    }
-
-    private func cachedSummary() -> TodaySummary? {
-        WidgetStore.loadToday().flatMap(Self.decode)
-    }
-
-    private static func decode(_ data: Data) -> TodaySummary? {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try? decoder.decode(TodaySummary.self, from: data)
     }
 }

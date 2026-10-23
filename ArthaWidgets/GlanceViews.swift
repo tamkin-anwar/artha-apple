@@ -2,112 +2,6 @@ import Charts
 import SwiftUI
 import WidgetKit
 
-/// The numbers a widget shows, worked out from the server's /today for the
-/// moment the widget draws. A widget can still be on screen the next
-/// morning, so "a day for N days" is recounted from the entry's own date.
-struct Glance {
-    enum Status { case onPace, ahead, over }
-
-    let summary: TodaySummary
-    let metric: GlanceMetric
-    let date: Date
-
-    var code: String { summary.currency }
-    var hasBudget: Bool { summary.safeToSpend != nil }
-
-    /// Falls back to spent this month when there's no budget yet, and when
-    /// net worth was picked but there are no accounts.
-    var effectiveMetric: GlanceMetric {
-        switch metric {
-        case .safeToSpend where !hasBudget: .spent
-        case .netWorth where summary.netWorth == nil: hasBudget ? .safeToSpend : .spent
-        default: metric
-        }
-    }
-
-    var daysLeft: Int {
-        let calendar = Calendar.current
-        guard let serverDay = Date.apiDay(summary.date),
-              calendar.isDate(date, equalTo: serverDay, toGranularity: .month) else { return summary.month.daysLeft }
-        let day = calendar.component(.day, from: date)
-        return max(1, summary.month.daysInMonth - max(day, summary.month.day) + 1)
-    }
-
-    var safe: Decimal { max(0, Decimal.api(summary.safeToSpend?.amount)) }
-    var perDay: Decimal { (safe / Decimal(daysLeft)).rounded(0, .down) }
-    var spent: Decimal { Decimal.api(summary.spent) }
-    var cap: Decimal? { summary.budget.map { Decimal.api($0.cap) } }
-    var netWorth: Decimal { Decimal.api(summary.netWorth?.amount) }
-    var overBy: Decimal { Decimal.api(summary.safeToSpend?.overBy) }
-
-    var status: Status {
-        switch summary.safeToSpend?.status {
-        case "over": .over
-        case "ahead": .ahead
-        default: .onPace
-        }
-    }
-
-    var label: String {
-        switch effectiveMetric {
-        case .safeToSpend: "Safe to spend"
-        case .spent: "Spent in \(summary.month.name)"
-        case .netWorth: "Net worth"
-        }
-    }
-
-    var value: Decimal {
-        switch effectiveMetric {
-        case .safeToSpend: safe
-        case .spent: spent
-        case .netWorth: netWorth
-        }
-    }
-
-    var detail: String {
-        switch effectiveMetric {
-        case .safeToSpend:
-            if status == .over { return "Over by \(Money.whole(overBy, code))" }
-            return "\(Money.whole(perDay, code)) a day for \(daysLeft) \(daysLeft == 1 ? "day" : "days")"
-        case .spent:
-            if let cap { return "of \(Money.whole(cap, code)) budget" }
-            return "so far this month"
-        case .netWorth:
-            let count = summary.netWorth?.accountCount ?? 0
-            return "across \(count) \(count == 1 ? "account" : "accounts")"
-        }
-    }
-
-    var statusText: String? {
-        guard hasBudget, effectiveMetric != .netWorth else { return nil }
-        switch status {
-        case .onPace: return "On pace"
-        case .ahead: return "Ahead of pace"
-        case .over: return "Over budget"
-        }
-    }
-
-    var statusColor: Color {
-        status == .onPace ? Palette.good : Palette.caution
-    }
-
-    var lineColor: Color {
-        !hasBudget || status == .onPace ? Palette.accent : Palette.cautionLine
-    }
-
-    struct Point: Identifiable {
-        let day: Int
-        let amount: Double
-        var id: Int { day }
-    }
-
-    var points: [Point] {
-        summary.spendingByDay.map { Point(day: $0.day, amount: (Decimal.api($0.spent) as NSDecimalNumber).doubleValue) }
-    }
-
-    var paceTop: Double? { cap.map { ($0 as NSDecimalNumber).doubleValue } }
-}
-
 // MARK: - Entry view
 
 struct GlanceView: View {
@@ -175,74 +69,6 @@ private extension WidgetFamily {
 
 // MARK: - Home Screen
 
-private struct Header: View {
-    let text: String
-
-    var body: some View {
-        HStack(spacing: 6) {
-            OrbMark().frame(width: 14, height: 14)
-            Text(text.uppercased())
-                .font(.system(size: 11, weight: .bold))
-                .tracking(0.6)
-                .foregroundStyle(Palette.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-    }
-}
-
-private struct BigNumber: View {
-    let glance: Glance
-    var size: CGFloat = 36
-
-    var body: some View {
-        Text(Money.whole(glance.value, glance.code))
-            .font(.figure(size))
-            .monospacedDigit()
-            .foregroundStyle(Palette.ink)
-            .lineLimit(1)
-            .minimumScaleFactor(0.45)
-            .contentTransition(.numericText(value: (glance.value as NSDecimalNumber).doubleValue))
-            .widgetAccentable()
-    }
-}
-
-private struct StatusLine: View {
-    let glance: Glance
-
-    var body: some View {
-        if let text = glance.statusText {
-            HStack(spacing: 5) {
-                Circle().fill(glance.statusColor).frame(width: 7, height: 7)
-                Text(text)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(glance.statusColor)
-            }
-        }
-    }
-}
-
-private struct SmallGlance: View {
-    let glance: Glance
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Header(text: glance.label)
-            Spacer(minLength: 4)
-            BigNumber(glance: glance, size: 38)
-            Text(glance.detail)
-                .font(.system(size: 12))
-                .foregroundStyle(Palette.secondary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
-                .padding(.top, 2)
-            Spacer(minLength: 4)
-            StatusLine(glance: glance)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-    }
-}
-
 private struct AddButton: View {
     var body: some View {
         Link(destination: URL(string: "artha://add")!) {
@@ -276,43 +102,6 @@ private struct MediumGlance: View {
     }
 }
 
-/// The month so far against an even pace, small enough for a widget.
-private struct MiniPace: View {
-    let glance: Glance
-
-    var body: some View {
-        let days = glance.summary.month.daysInMonth
-        let top = max(glance.paceTop ?? 0, glance.points.map(\.amount).max() ?? 0, 1) * 1.08
-        Chart {
-            if let pace = glance.paceTop {
-                ForEach([1, days], id: \.self) { day in
-                    LineMark(x: .value("Day", day), y: .value("Amount", pace * Double(day) / Double(days)),
-                             series: .value("Line", "Pace"))
-                        .foregroundStyle(Palette.secondary.opacity(0.5))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 3]))
-                }
-            }
-            ForEach(glance.points) { point in
-                AreaMark(x: .value("Day", point.day), y: .value("Amount", point.amount))
-                    .foregroundStyle(LinearGradient(colors: [glance.lineColor.opacity(0.28), glance.lineColor.opacity(0)],
-                                                    startPoint: .top, endPoint: .bottom))
-                    .interpolationMethod(.monotone)
-                LineMark(x: .value("Day", point.day), y: .value("Amount", point.amount),
-                         series: .value("Line", "Spent"))
-                    .foregroundStyle(glance.lineColor)
-                    .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-                    .interpolationMethod(.monotone)
-            }
-        }
-        .widgetAccentable()
-        .chartXScale(domain: 1...days)
-        .chartYScale(domain: 0...top)
-        .chartXAxis(.hidden)
-        .chartYAxis(.hidden)
-        .accessibilityHidden(true)
-    }
-}
-
 private struct LargeGlance: View {
     let glance: Glance
 
@@ -320,8 +109,8 @@ private struct LargeGlance: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Header(text: glance.label)
-                    BigNumber(glance: glance, size: 44).padding(.top, 6)
+                    GlanceHeader(text: glance.label)
+                    GlanceNumber(glance: glance, size: 44).padding(.top, 6)
                     Text(glance.detail)
                         .font(.system(size: 13))
                         .foregroundStyle(Palette.secondary)
@@ -329,7 +118,7 @@ private struct LargeGlance: View {
                 Spacer()
                 AddButton()
             }
-            StatusLine(glance: glance).padding(.top, 8)
+            GlanceStatus(glance: glance).padding(.top, 8)
             if glance.effectiveMetric != .netWorth, glance.points.count > 1 {
                 MiniPace(glance: glance)
                     .frame(height: 70)

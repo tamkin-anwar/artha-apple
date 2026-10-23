@@ -38,10 +38,25 @@ struct LogPurchaseIntent: AppIntent {
     }
 }
 
-/// Siri and Spotlight phrases, and what makes the action easy to find
-/// when building the Wallet automation in Shortcuts.
+/// Siri and Spotlight phrases, and what makes the actions easy to find in
+/// Shortcuts (Log Purchase for the Wallet automation). Every phrase names
+/// the app, which Siri needs to know where to send it.
 struct ArthaShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: CheckNumberIntent(),
+            phrases: [
+                "What's safe to spend in \(.applicationName)",
+                "How much can I spend in \(.applicationName)",
+                "Check \(.applicationName)",
+                "Check \(\.$metric) in \(.applicationName)",
+                "What's my \(\.$metric) in \(.applicationName)",
+            ],
+            // Not "Safe to Spend": the \(\.$metric) phrases already add a
+            // tile for each number, that one included.
+            shortTitle: "Check Artha",
+            systemImageName: "gauge.with.needle"
+        )
         AppShortcut(
             intent: LogPurchaseIntent(),
             phrases: [
