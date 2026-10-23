@@ -208,6 +208,20 @@ final class ActivityModel {
         await onChange()
     }
 
+    /// The open bills a charge could have paid, likeliest first.
+    func bills(for tx: APITransaction) async throws -> [APITransaction] {
+        let choices: BillChoices = try await api.get("transactions/\(tx.id)/bills")
+        return choices.bills
+    }
+
+    /// Pairs a charge with the bill it paid, so they count once. The
+    /// charge's own row goes; the bill now holds it.
+    func pair(_ tx: APITransaction, with bill: APITransaction) async throws {
+        let _: TransactionEnvelope = try await api.post("transactions/\(tx.id)/pair", body: ["bill_id": bill.id])
+        await reload()
+        await onChange()
+    }
+
     /// Hides the transaction now and deletes it once the undo window
     /// passes. Deleting another one first finishes this one straight away.
     func delete(_ tx: APITransaction) {

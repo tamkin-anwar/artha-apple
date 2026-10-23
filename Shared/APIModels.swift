@@ -101,6 +101,13 @@ nonisolated struct APITransaction: Decodable, Sendable, Identifiable, Hashable {
     /// count once): that charge's own name. Nil when it isn't paired, or
     /// can't be split back apart.
     let pairedCharge: String?
+    /// A real charge that could still be paired with a bill by hand.
+    let canPair: Bool?
+}
+
+/// GET transactions/{id}/bills: what a charge could have paid, likeliest first.
+nonisolated struct BillChoices: Decodable, Sendable {
+    let bills: [APITransaction]
 }
 
 /// POST transactions/{id}/unpair: the bill and the charge, apart again.

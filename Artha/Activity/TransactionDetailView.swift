@@ -23,6 +23,7 @@ struct TransactionDetailView: View {
     @State private var confirmingDelete = false
     @State private var confirmingUnpair = false
     @State private var isUnpairing = false
+    @State private var choosingBill = false
 
     var body: some View {
         Group {
@@ -146,6 +147,22 @@ struct TransactionDetailView: View {
                     }
                 }
 
+                if tx.canPair == true {
+                    Button {
+                        choosingBill = true
+                    } label: {
+                        Label(tx.type == "income" ? "Pair with Repeating Income" : "Pair with a Bill", systemImage: "link")
+                    }
+                    .font(.system(.callout, weight: .semibold))
+                    .foregroundStyle(Palette.accent)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .background(Palette.surface, in: .rect(cornerRadius: Radius.card))
+                    .accessibilityHint("Pick the bill this paid, so it counts once")
+                    .sheet(isPresented: $choosingBill) {
+                        PairBillSheet(transaction: tx) { dismiss() }
+                    }
+                }
+
                 Button("Delete Transaction", role: .destructive) {
                     confirmingDelete = true
                 }
@@ -247,6 +264,125 @@ struct TransactionDetailView: View {
     private static func apiDay(_ date: Date) -> String {
         let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+    }
+}
+
+/// The bills a charge could have paid, likeliest first. Picking one pairs
+/// them (counted once, and Unpair splits them again), then closes the
+/// transaction, since the charge now lives on the bill.
+private struct PairBillSheet: View {
+    let transaction: APITransaction
+    let onPaired: () -> Void
+
+    @Environment(AppSession.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    @State private var bills: [APITransaction]?
+    @State private var working: Int?
+    @State private var error: String?
+
+    private var isIncome: Bool { transaction.type == "income" }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let bills, bills.isEmpty {
+                    ContentUnavailableView(isIncome ? "No Repeating Income Nearby" : "No Unpaid Bills Nearby",
+                                           systemImage: "calendar.badge.clock",
+                                           description: Text(error ?? (isIncome
+                                               ? "Repeating income you track shows up here."
+                                               : "Bills you track in Plan show up here when one is due near this date.")))
+                } else if let bills {
+                    List {
+                        Section {
+                            ForEach(bills) { bill in
+                                row(bill)
+                            }
+                        } footer: {
+                            if let error {
+                                Text(error).foregroundStyle(Palette.caution).announcedWhenShown(error)
+                            }
+                        }
+                    }
+                    .scrollContentBackground(.hidden)
+                } else {
+                    ProgressView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Palette.ground)
+            .navigationTitle(isIncome ? "Which Income Is This?" : "Which Bill Did This Pay?")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .task { await load() }
+        }
+        .presentationDetents([.medium, .large])
+        #if os(macOS)
+        .frame(minWidth: 380, minHeight: 420)
+        #endif
+    }
+
+    private func row(_ bill: APITransaction) -> some View {
+        Button {
+            pair(with: bill)
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(bill.description)
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(1)
+                    Text(Date.apiDay(bill.date)?.formatted(.dateTime.month(.abbreviated).day()) ?? "")
+                        .font(.system(.footnote))
+                        .foregroundStyle(Palette.secondary)
+                }
+                Spacer(minLength: 8)
+                if working == bill.id {
+                    ProgressView()
+                } else {
+                    Text(Money.cents(Decimal.api(bill.amount), bill.currency))
+                        .font(.system(.body, design: .rounded, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(Palette.ink)
+                }
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(working != nil)
+        .listRowBackground(Palette.surface)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Pairs this transaction with \(bill.description)")
+    }
+
+    private func load() async {
+        do {
+            bills = try await session.activity.bills(for: transaction)
+        } catch {
+            bills = []
+            self.error = "Artha couldn\u{2019}t load your bills. Try again in a moment."
+        }
+    }
+
+    private func pair(with bill: APITransaction) {
+        working = bill.id
+        error = nil
+        Task {
+            defer { working = nil }
+            do {
+                try await session.activity.pair(transaction, with: bill)
+                dismiss()
+                onPaired()
+            } catch let failure as APIError {
+                error = failure.message
+            } catch {
+                self.error = "Artha couldn\u{2019}t pair those. Try again in a moment."
+            }
+        }
     }
 }
 
